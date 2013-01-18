@@ -6,6 +6,8 @@ package com.threefps.ndb;
 
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.errors.NotFoundException;
+import com.threefps.ndb.utils.IO;
+import com.threefps.ndb.utils.Str;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -21,8 +23,8 @@ import java.nio.file.StandardOpenOption;
  * - Version: 1 byte
  * - Table name: 64 bytes, byte-zero padding to the right
  * - The next 64 * 35 bytes contains field informations:
- *   - Field name: 30 bytes
  *   - Data type: 1 byte
+ *   - Field name: 30 bytes
  *   - First data position: 4 bytes
  * 
  * @author sluu
@@ -36,6 +38,7 @@ class DataTable implements Table {
     private String name = null;
     private FileChannel recFile = null; // Record file channel
     private FileChannel dataFile = null; // Data file channel
+    private FieldInfo[] fields = new FieldInfo[64];
     
     // <editor-fold defaultstate="collapsed" desc="Getters and Setters">
     private void setRecFile(FileChannel recFile) {
@@ -74,6 +77,129 @@ class DataTable implements Table {
 
     // </editor-fold>
     
+    // <editor-fold desc="Read header from file">
+    
+    /**
+     * Load table header from file
+     */
+    private void readHeader() throws DataException, IOException {
+        readVersion();
+        readName();
+        for (byte i = 0; i < 64; i++) readField(i);
+    }
+    
+    /**
+     * Read the table version from file
+     * @throws DataException
+     * @throws IOException 
+     */
+    private void readVersion() throws DataException, IOException {
+        FileChannel f = getRecFile();
+        f.position(0);
+        ByteBuffer buff = IO.read(f, 1);        
+        if (buff.position() != 1)
+            throw new DataException("Cannot read header version");
+        buff.rewind();
+        setVersion(buff.get());
+    }
+    
+    /**
+     * Read the table name from file
+     * @throws DataException
+     * @throws IOException 
+     */
+    private void readName() throws DataException, IOException {        
+        FileChannel f = getRecFile();
+        f.position(1);
+        ByteBuffer buff = IO.read(f, 64);        
+        if (buff.position() != 64)
+            throw new DataException("Cannot read table name");
+        setName(Str.fromCString(buff.array()));
+    }
+    
+    /**
+     * Read the Nth field information
+     * @param n Zero-based field number
+     */
+    private void readField(byte n) throws IOException, DataException {
+        FileChannel f = getRecFile();
+        f.position(1 + 64 + (n * 35));
+        ByteBuffer buff = IO.read(f, 35);
+        if (buff.position() != 35)
+            throw new DataException("Fail to read field info for #" + n);
+        buff.rewind();
+        byte[] b = buff.array();
+        if (DataType.fromByte(b[0]) == DataType.NONE)
+            fields[n] = null;
+        else {
+            fields[n] = new FieldInfo(n,
+                    Str.fromCString(b, 0, 30), 
+                    DataType.fromByte(b[0]), 
+                    buff.getInt(30));
+        }
+    }
+    // </editor-fold>
+    
+    // <editor-fold desc="Write header to file">
+    
+    /**
+     * Write table header to file
+     */
+    private void writeHeader() throws IOException {
+        writeVersion();
+        writeName();
+        for (int i = 0; i < 64; i++) writeField(i);
+        getRecFile().force(true);
+    }
+    
+    /**
+     * Write version to header
+     * @throws IOException 
+     */
+    private void writeVersion() throws IOException {
+        FileChannel f = getRecFile();
+        f.position(0);
+        ByteBuffer buff = ByteBuffer.allocate(1);
+        buff.put(getVersion());
+        buff.flip();
+        IO.write(f, buff, false);
+    }
+    
+    /**
+     * Write table name to header
+     * @throws IOException 
+     */
+    private void writeName() throws IOException {
+        FileChannel f = getRecFile();
+        f.position(1);
+        ByteBuffer buff = ByteBuffer.wrap(Str.toBuffer(getName(), NAME_MAX_LENGTH));
+        buff.rewind();
+        IO.write(f, buff, false);
+    }
+    
+    /**
+     * Write the Nth field information
+     * @param n Zero-based field number
+     */
+    private void writeField(int n) throws IOException {
+        FileChannel f = getRecFile();
+        f.position(1 + 64 + (n * 35));
+        ByteBuffer buff = ByteBuffer.allocate(35);
+        if (fields[n] == null) {
+            buff.put(DataType.NONE.toByte());
+            buff.put(Str.toBuffer("", 30));
+            buff.putInt(0);
+        } else {
+            buff.put(fields[n].getType().toByte());
+            buff.put(Str.toBuffer(fields[n].getName(), 30));
+            buff.putInt(fields[n].getFDP());
+        }
+        buff.flip();
+        IO.write(f, buff, false);
+    }
+    
+    // </editor-fold>
+    
     /**
      * Create or open a new 
      * @param name
@@ -105,10 +231,10 @@ class DataTable implements Table {
         table.setRecFile(FileChannel.open(recPath, StandardOpenOption.READ, StandardOpenOption.WRITE));
         table.setDataFile(FileChannel.open(dataPath, StandardOpenOption.READ, StandardOpenOption.WRITE));
         
-        if (dataFileExists && recFileExists) {
-            table.loadHeader();
-        } else {
-            table.setName(name);
+        table.setName(name);
+        if (dataFileExists && recFileExists)
+            table.readHeader();
+        else {            
             table.setVersion(DataTable.CURRENT_VERSION);
             table.writeHeader();
         }
@@ -116,58 +242,15 @@ class DataTable implements Table {
     }
     
     /**
-     * Load table header from file
-     */
-    private void loadHeader() throws DataException, IOException {        
-        FileChannel f = getRecFile();
-        int nread = 0;
-        // read version
-        ByteBuffer buff = ByteBuffer.allocate(1);
-        if (f.read(buff) != 1) {
-            throw new DataException("Cannot read header version");
-        }
-        setVersion(buff.get());
-    }
-    
-    /**
-     * Write table header to file
-     */
-    private void writeHeader() throws IOException {
-        // Allocate bytes for the header
-                
-        byte[] nameBytes = getName().getBytes();        
-        
-        ByteBuffer buff = ByteBuffer.allocate(2305);
-        buff.put(getVersion()).put(nameBytes);
-        
-        // write the padding 
-        int padding = DataTable.NAME_MAX_LENGTH - nameBytes.length;
-        while (padding > 0) {
-            buff.put((byte)0);
-            padding--;            
-        }
-        // fill in empty fields
-        for (int i = 0; i < 2240; i++) {
-            buff.put((byte)0);
-        }
-        
-        FileChannel f = getRecFile();
-        f.position(0);
-        buff.flip();
-        while (buff.hasRemaining()) {
-            f.write(buff);
-        }
-        f.force(true);
-    }
-    
-    /**
      * Close this table and files associated with it
      */
     public void close() throws IOException {
         if (getRecFile() != null && getRecFile().isOpen()) {
+            getRecFile().force(true);
             getRecFile().close();
         }
         if (getDataFile() != null && getDataFile().isOpen()) {
+            getDataFile().force(true);
             getDataFile().close();
         }
     }
