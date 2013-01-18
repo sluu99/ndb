@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * - The next 64 * 35 bytes contains field informations:
  *   - Data type: 1 byte
  *   - Field name: 30 bytes
- *   - First data position: 4 bytes
+ *   - First data position: pointer
  * 
  * @author sluu
  */
