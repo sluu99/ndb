@@ -5,6 +5,7 @@
 package com.threefps.ndb;
 
 import com.threefps.ndb.errors.DataException;
+import com.threefps.ndb.errors.LimitException;
 import com.threefps.ndb.errors.NotFoundException;
 import com.threefps.ndb.utils.IO;
 import com.threefps.ndb.utils.Str;
@@ -15,6 +16,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Implementation of the Table interface
@@ -32,13 +35,22 @@ import java.nio.file.StandardOpenOption;
 class DataTable implements Table {
 
     private static final byte CURRENT_VERSION = 1;
-    private static final int NAME_MAX_LENGTH = 64;
+    
+    private static final byte MAX_FIELDS = 64;
+    
+    private static final int VERSION_SIZE = 1;
+    private static final int TABLE_NAME_SIZE = 64;
+    private static final int DATA_TYPE_SIZE = 1;
+    private static final int FIELD_NAME_SIZE = 30;
+    private static final int POINTER_SIZE = 8; // Pointer to a file position
+    private static final int FIELD_INFO_SIZE = DATA_TYPE_SIZE + FIELD_NAME_SIZE + POINTER_SIZE;
+    private static final int HEADER_SIZE = VERSION_SIZE + TABLE_NAME_SIZE + (FIELD_INFO_SIZE * MAX_FIELDS);
     
     private byte version = 0;
     private String name = null;
     private FileChannel recFile = null; // Record file channel
     private FileChannel dataFile = null; // Data file channel
-    private FieldInfo[] fields = new FieldInfo[64];
+    private FieldInfo[] fields = new FieldInfo[MAX_FIELDS];
     
     // <editor-fold defaultstate="collapsed" desc="Getters and Setters">
     private void setRecFile(FileChannel recFile) {
@@ -85,7 +97,7 @@ class DataTable implements Table {
     private void readHeader() throws DataException, IOException {
         readVersion();
         readName();
-        for (byte i = 0; i < 64; i++) readField(i);
+        for (byte i = 0; i < MAX_FIELDS; i++) readField(i);
     }
     
     /**
@@ -96,8 +108,8 @@ class DataTable implements Table {
     private void readVersion() throws DataException, IOException {
         FileChannel f = getRecFile();
         f.position(0);
-        ByteBuffer buff = IO.read(f, 1);        
-        if (buff.position() != 1)
+        ByteBuffer buff = IO.read(f, VERSION_SIZE);        
+        if (buff.position() != VERSION_SIZE)
             throw new DataException("Cannot read header version");
         buff.rewind();
         setVersion(buff.get());
@@ -111,8 +123,8 @@ class DataTable implements Table {
     private void readName() throws DataException, IOException {        
         FileChannel f = getRecFile();
         f.position(1);
-        ByteBuffer buff = IO.read(f, 64);        
-        if (buff.position() != 64)
+        ByteBuffer buff = IO.read(f, TABLE_NAME_SIZE);        
+        if (buff.position() != TABLE_NAME_SIZE)
             throw new DataException("Cannot read table name");
         setName(Str.fromCString(buff.array()));
     }
@@ -123,9 +135,9 @@ class DataTable implements Table {
      */
     private void readField(byte n) throws IOException, DataException {
         FileChannel f = getRecFile();
-        f.position(1 + 64 + (n * 35));
-        ByteBuffer buff = IO.read(f, 35);
-        if (buff.position() != 35)
+        f.position(VERSION_SIZE + TABLE_NAME_SIZE + (n * FIELD_INFO_SIZE));
+        ByteBuffer buff = IO.read(f, FIELD_INFO_SIZE);
+        if (buff.position() != FIELD_INFO_SIZE)
             throw new DataException("Fail to read field info for #" + n);
         buff.rewind();
         byte[] b = buff.array();
@@ -133,9 +145,9 @@ class DataTable implements Table {
             fields[n] = null;
         else {
             fields[n] = new FieldInfo(n,
-                    Str.fromCString(b, 0, 30), 
+                    Str.fromCString(b, 1, FIELD_NAME_SIZE), 
                     DataType.fromByte(b[0]), 
-                    buff.getInt(30));
+                    buff.getLong(FIELD_NAME_SIZE + DATA_TYPE_SIZE));
         }
     }
     // </editor-fold>
@@ -148,7 +160,7 @@ class DataTable implements Table {
     private void writeHeader() throws IOException {
         writeVersion();
         writeName();
-        for (int i = 0; i < 64; i++) writeField(i);
+        for (int i = 0; i < MAX_FIELDS; i++) writeField(i);
         getRecFile().force(true);
     }
     
@@ -171,9 +183,10 @@ class DataTable implements Table {
      */
     private void writeName() throws IOException {
         FileChannel f = getRecFile();
-        f.position(1);
-        ByteBuffer buff = ByteBuffer.wrap(Str.toBuffer(getName(), NAME_MAX_LENGTH));
-        buff.rewind();
+        f.position(VERSION_SIZE);
+        ByteBuffer buff = ByteBuffer.allocate(TABLE_NAME_SIZE);
+        buff.put(Str.toBuffer(getName(), TABLE_NAME_SIZE), 0, TABLE_NAME_SIZE);
+        buff.flip();
         IO.write(f, buff, false);
     }
     
@@ -183,19 +196,19 @@ class DataTable implements Table {
      */
     private void writeField(int n) throws IOException {
         FileChannel f = getRecFile();
-        f.position(1 + 64 + (n * 35));
-        ByteBuffer buff = ByteBuffer.allocate(35);
-        if (fields[n] == null) {
-            buff.put(DataType.NONE.toByte());
-            buff.put(Str.toBuffer("", 30));
-            buff.putInt(0);
-        } else {
+        f.position(VERSION_SIZE + TABLE_NAME_SIZE + (n * FIELD_INFO_SIZE));
+        
+        if (fields[n] == null) 
+            IO.writeZeros(f, FIELD_INFO_SIZE, true);
+        else {
+            ByteBuffer buff = ByteBuffer.allocate(FIELD_INFO_SIZE);
             buff.put(fields[n].getType().toByte());
             buff.put(Str.toBuffer(fields[n].getName(), 30));
-            buff.putInt(fields[n].getFDP());
+            buff.putLong(fields[n].getFDP());
+            buff.flip();
+            IO.write(f, buff, false);
         }
-        buff.flip();
-        IO.write(f, buff, false);
+        
     }
     
     // </editor-fold>
@@ -209,8 +222,8 @@ class DataTable implements Table {
      */
     public static DataTable open(String name, String dir) throws IOException, DataException {
         name = name.toLowerCase().trim();        
-        if (name.length() > DataTable.NAME_MAX_LENGTH) {
-            name = name.substring(0, NAME_MAX_LENGTH);
+        if (name.length() > FIELD_NAME_SIZE) {
+            name = name.substring(0, FIELD_NAME_SIZE);
         }
         
         Path recPath = FileSystems.getDefault().getPath(dir, name + ".rec");
@@ -257,12 +270,24 @@ class DataTable implements Table {
     
     
     @Override
-    public Record newRecord() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public Record newRecord() throws IOException  {
+        
+        FileChannel f = getRecFile();
+        long pos = f.size();
+        f.position(pos);
+        IO.writeZeros(f, MAX_FIELDS * POINTER_SIZE, true);
+        DataRecord r = new DataRecord();
+        r.setId((pos - HEADER_SIZE) / (MAX_FIELDS * POINTER_SIZE) + 1);
+        return r;
     }
 
     @Override
     public Record getRecord(int id) throws NotFoundException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public FieldInfo getField() throws LimitException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     

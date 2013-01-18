@@ -10,7 +10,7 @@ package com.threefps.ndb;
  */
 public interface Record {
     
-    public int getId();
+    public long getId();
     
     public byte getByte(String key);
     public short getShort(String key);

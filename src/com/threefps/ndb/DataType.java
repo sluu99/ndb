@@ -46,4 +46,22 @@ public enum DataType {
         }
         return 0;
     }
+    
+    /**
+     * Return the size for this data type. Except for STRING, which will return 0
+     * @return 
+     */
+    public byte size() {
+        switch (this) {
+            case BYTE: return 1;
+            case SHORT: return 2;
+            case INT: return 4;
+            case LONG: return 8;
+            case FLOAT: return 4;
+            case DOUBLE: return 8;
+            case BOOLEAN: return 1;
+            case STRING: return 0;
+        }
+        return 0;
+    }
 }

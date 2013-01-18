@@ -15,10 +15,10 @@ public class FieldInfo {
     private byte number = 0;
     private String name = null;
     private DataType type;
-    private int FDP = 0;
+    private long FDP = 0;
    
 
-    FieldInfo(byte number, String name, DataType type, int FDP) {
+    FieldInfo(byte number, String name, DataType type, long FDP) {
         name = name.trim().toLowerCase();
         if (name.length() > MAX_NAME_LENGTH) name = name.substring(0, MAX_NAME_LENGTH);
         
@@ -44,7 +44,7 @@ public class FieldInfo {
      * Get the First Data Position
      * @return 
      */
-    public int getFDP() {
+    public long getFDP() {
         return FDP;
     }
     

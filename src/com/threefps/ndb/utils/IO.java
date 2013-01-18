@@ -37,7 +37,17 @@ public class IO {
     public static void write(FileChannel f, ByteBuffer b, boolean force) throws IOException {
         while (b.hasRemaining())
             f.write(b);
-        if (force)
-            f.force(true);
+        if (force) f.force(true);
+    }
+    
+    /**
+     * Write n zero bytes to the channel
+     * @param f
+     * @param n
+     * @param force
+     * @throws IOException 
+     */
+    public static void writeZeros(FileChannel f, int n, boolean force) throws IOException {
+        write(f, ByteBuffer.wrap(new byte[n]), force);
     }
 }
