@@ -4,11 +4,13 @@
  */
 package com.threefps.ndb;
 
+import com.threefps.ndb.Record;
+
 /**
  *
  * @author sluu
  */
-class DataRecord implements Record {
+class RecordImpl implements Record {
 
     private long id = 0;
     

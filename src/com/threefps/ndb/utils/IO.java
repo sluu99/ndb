@@ -14,40 +14,54 @@ import java.nio.channels.FileChannel;
  */
 public class IO {
     /**
-     * Read N bytes from a channel
-     * @param f
-     * @param n
-     * @return 
+     * Read N bytes from a channel into a destination starting at an offset
+     * 
+     * @param f The file channel
+     * @param pos Read from this position. Specify -1 to indicate the current position
+     * @param dst Destination of the data
+     * @param offset Start saving data at this position in the byte array
+     * @param length Number of bytes intended to read
+     * @return Number of bytes read
      */
-    public static ByteBuffer read(FileChannel f, int n) throws IOException {
-        ByteBuffer buff = ByteBuffer.allocate(n);
-        int nread = 0;
+    public static int read(FileChannel f, long pos, byte[] dst, int offset, int length) throws IOException {
+        if (pos != -1) f.position(pos);            
+        ByteBuffer buff = ByteBuffer.allocate(length);        
+        int nread = 0, total = 0;
         do {
             nread = f.read(buff);
+            total += nread;
         } while (nread != -1 && buff.hasRemaining());
-        return buff;
+        buff.rewind();
+        buff.get(dst, offset, total);
+        return total;
     }
     
     /**
      * Write the buffer to a file channel
      * @param f
+     * @param pos Write to this position. Specify -1 to indicate the current position
      * @param b
      * @param force Should the file channel force flushing?
      */
-    public static void write(FileChannel f, ByteBuffer b, boolean force) throws IOException {
-        while (b.hasRemaining())
-            f.write(b);
+    public static void write(FileChannel f, long pos, byte[] src, int offset, int length, boolean force) throws IOException {
+        if (pos != -1) f.position(pos);
+        ByteBuffer buff = ByteBuffer.allocate(length);
+        buff.put(src, offset, length);
+        buff.flip();
+        while (buff.hasRemaining())
+            f.write(buff);
         if (force) f.force(true);
     }
     
     /**
      * Write n zero bytes to the channel
      * @param f
+     * @param pos Write to this position. Specify -1 to indicate the current position
      * @param n
      * @param force
      * @throws IOException 
      */
-    public static void writeZeros(FileChannel f, int n, boolean force) throws IOException {
-        write(f, ByteBuffer.wrap(new byte[n]), force);
+    public static void writeZeros(FileChannel f, long pos, int n, boolean force) throws IOException {
+        write(f, pos, new byte[n], 0, n, force);
     }
 }

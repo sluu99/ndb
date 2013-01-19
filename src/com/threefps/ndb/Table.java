@@ -14,25 +14,18 @@ import java.io.IOException;
  * @author sluu
  */
 public interface Table {
-    /**
-     * Get the current file version of the table.
-     * @return 
-     */
-    public byte getVersion();
     
     /**
-     * Get the table name
+     * Get this header information of this table
      * @return 
      */
-    public String getName();
-    
-    public FieldInfo getField() throws LimitException;
+    public TableHeader getHeader();
     
     /**
      * Create a new record
      * @return 
      */
-    public Record newRecord() throws IOException, DataException;
+    public Record createRecord() throws IOException, DataException;
     
     /**
      * Get a record based on its ID number
@@ -40,4 +33,9 @@ public interface Table {
      * @return 
      */
     public Record getRecord(int id) throws NotFoundException, DataException;
+    
+    /**
+     * Close the table and all the files associated with it
+     */
+    public void close() throws IOException;
 }

@@ -15,7 +15,7 @@ import java.util.HashMap;
 public class NDB {
     
     private String dir = null;
-    private HashMap<String, DataTable> tables = new HashMap<>();
+    private HashMap<String, TableImpl> tables = new HashMap<>();
     
     
     /**
@@ -42,13 +42,13 @@ public class NDB {
             return tables.get(name);
         }
         
-        DataTable t = DataTable.open(name, dir);
+        TableImpl t = TableImpl.open(name, dir);
         tables.put(name, t);
         return t;
     }
  
     public void close() throws IOException {
-        for (DataTable t: tables.values()) {
+        for (TableImpl t: tables.values()) {
             t.close();
         }
     }
