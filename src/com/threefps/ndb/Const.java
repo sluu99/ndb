@@ -19,4 +19,9 @@ public class Const {
      * Size of pointer to a file position
      */    
     public static final int POINTER_SIZE = 8;
+    
+    /**
+     * Size of timestamp
+     */
+    public static final int TIMESTAMP_SIZE = 8;;
 }

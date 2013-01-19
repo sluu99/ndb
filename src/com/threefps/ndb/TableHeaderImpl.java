@@ -24,7 +24,7 @@ class TableHeaderImpl implements TableHeader {
     private String name = null;
     private FileChannel file = null;
     private long recordCount = 0;
-    private long newestRecord = 0;
+    private long newestRecordPos = 0;
     private long keyIndexRootPos = 0;
     
     // <editor-fold desc="Getters and Setters">
@@ -32,8 +32,8 @@ class TableHeaderImpl implements TableHeader {
         return file;
     }
 
-    public long getNewestRecord() {
-        return newestRecord;
+    public long getNewestRecordPos() {
+        return newestRecordPos;
     }
 
     public long getKeyIndexRootPos() {
@@ -71,14 +71,21 @@ class TableHeaderImpl implements TableHeader {
         this.recordCount = recordCount;
     }
 
-    public void setNewestRecord(long newestRecord) {
-        this.newestRecord = newestRecord;
+    public void setNewestRecordPos(long newestRecord) {
+        this.newestRecordPos = newestRecord;
     }
 
     public void setKeyIndexRootPos(long keyIndexRootPos) {
         this.keyIndexRootPos = keyIndexRootPos;
     }
     // </editor-fold>
+    
+    /**
+     * Increase the record count
+     */
+    public void incCount() {
+        recordCount += 1;
+    }
     
     /**
      * Load table header from file
@@ -93,7 +100,7 @@ class TableHeaderImpl implements TableHeader {
         int offset = 0;
         setVersion(b[0]); offset += VERSION_SIZE;
         setRecordCount(B.toLong(b, offset)); offset += RECORD_COUNT_SIZE;
-        setNewestRecord(B.toLong(b, offset)); offset += POINTER_SIZE;
+        setNewestRecordPos(B.toLong(b, offset)); offset += POINTER_SIZE;
         setKeyIndexRootPos(B.toLong(b, offset)); offset += POINTER_SIZE;
         
         // read the table name
@@ -122,23 +129,23 @@ class TableHeaderImpl implements TableHeader {
      */
     public void writeVersion() throws IOException {
         IO.write(getFile(), 0, 
-                B.fromByte(getVersion()), 0, VERSION_SIZE, false);
+                B.fromByte(getVersion()), 0, VERSION_SIZE);
     }
     
     public void writeRecordCount() throws IOException {
         IO.write(getFile(), VERSION_SIZE, 
-                B.fromLong(getRecordCount()), 0, 8, false);
+                B.fromLong(getRecordCount()), 0, 8);
     }
     
     public void writeNewestRecord() throws IOException {
         IO.write(getFile(), VERSION_SIZE + RECORD_COUNT_SIZE, 
-                B.fromLong(getNewestRecord()), 0, POINTER_SIZE, false);
+                B.fromLong(getNewestRecordPos()), 0, POINTER_SIZE);
     }
     
     public void writeKeyIndexRootPos() throws IOException {
         IO.write(
                 getFile(), VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE, 
-                B.fromLong(getKeyIndexRootPos()), 0, POINTER_SIZE, false);
+                B.fromLong(getKeyIndexRootPos()), 0, POINTER_SIZE);
     }
     
     public void writeTableName() throws IOException {
@@ -147,10 +154,10 @@ class TableHeaderImpl implements TableHeader {
         // write the table name size
         IO.write(
                 getFile(), VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE,
-                B.fromByte(len), 0, 1, false); 
+                B.fromByte(len), 0, 1); 
         // write the actual table name
         IO.write(
                 getFile(), VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE + 1, 
-                b, 0, len, false);
+                b, 0, len);
     }
 }

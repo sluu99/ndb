@@ -4,12 +4,8 @@
  */
 package com.threefps.ndb;
 
-import com.threefps.ndb.Record;
-import com.threefps.ndb.Table;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.errors.NotFoundException;
-import com.threefps.ndb.utils.B;
-import com.threefps.ndb.utils.IO;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -76,6 +72,7 @@ class TableImpl implements Table {
             table.getHeader().setName(name);
             table.getHeader().setVersion(TableImpl.CURRENT_VERSION);
             table.getHeader().write();
+            table.getFile().force(false);
         }
         return table;
     }
@@ -93,9 +90,15 @@ class TableImpl implements Table {
     }
 
     @Override
-    public Record createRecord() throws IOException {
-
-        return null;
+    public RecordImpl createRecord() throws IOException, DataException {
+        TableHeaderImpl h = getHeader();
+        RecordImpl r = RecordImpl.create(getFile(), h.getNewestRecordPos());
+        h.setNewestRecordPos(r.getPos());
+        h.incCount();
+        h.writeNewestRecord();
+        h.writeRecordCount();
+        getFile().force(false);
+        return r;
     }
 
     @Override
