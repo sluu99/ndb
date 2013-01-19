@@ -94,7 +94,7 @@ class TableHeaderImpl implements TableHeader {
         // read the fixed size data
         int len = VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE + 1;        
         byte[] b = new byte[len];
-        if (IO.read(getFile(), 0, b, 0, 1) != len)
+        if (IO.read(getFile(), 0, b, 0, len) != len)
             throw new DataException("Cannot read header information");
         
         int offset = 0;
