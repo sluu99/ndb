@@ -141,7 +141,7 @@ class TableHeaderImpl implements TableHeader {
     }
     
     public void writeTableName(FileChannel f) throws IOException {
-        byte[] buff = B.fromSmallString(getName());
+        byte[] buff = B.fromString(getName());
         int offset = VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE;
         IO.write(f, offset, buff, 0, buff.length); 
     }

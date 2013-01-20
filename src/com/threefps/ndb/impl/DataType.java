@@ -17,7 +17,8 @@ public enum DataType {
     FLOAT,
     DOUBLE,
     BOOLEAN,
-    STRING;
+    STRING,
+    BIG_STRING;
     
     public static DataType fromByte(byte b) {
         switch (b) {
@@ -29,6 +30,7 @@ public enum DataType {
             case 6: return DOUBLE;
             case 7: return BOOLEAN;
             case 8: return STRING;
+            case 9: return BIG_STRING;
         }
         return NONE;
     }
@@ -43,6 +45,7 @@ public enum DataType {
             case DOUBLE: return 6;
             case BOOLEAN: return 7;
             case STRING: return 8;
+            case BIG_STRING: return 9;
         }
         return 0;
     }
@@ -59,8 +62,7 @@ public enum DataType {
             case LONG: return 8;
             case FLOAT: return 4;
             case DOUBLE: return 8;
-            case BOOLEAN: return 1;
-            case STRING: return 0;
+            case BOOLEAN: return 1;            
         }
         return 0;
     }

@@ -51,7 +51,7 @@ public class B {
      * @param s
      * @return A byte array. The first byte is the length. The rest is the string
      */
-    public static byte[] fromSmallString(String s) {
+    public static byte[] fromString(String s) {
         byte[] sBytes = s.getBytes();
         byte len = (byte)sBytes.length;
         byte[] b = new byte[len+1];
@@ -65,7 +65,7 @@ public class B {
      * @param s
      * @return A byte array. The first byte is the length. The rest is the string
      */
-    public static byte[] fromString(String s) {
+    public static byte[] fromBigString(String s) {
         byte[] sBytes = s.getBytes();
         int len = sBytes.length;
         byte[] b = new byte[len+4];

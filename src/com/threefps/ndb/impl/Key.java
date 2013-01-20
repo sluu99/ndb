@@ -111,7 +111,7 @@ public class Key extends Node{
      * @throws IOException 
      */
     public void writeName(FileChannel f) throws IOException {
-        byte[] buff = B.fromSmallString(getName());
+        byte[] buff = B.fromString(getName());
         long offset = getPos() + POINTER_SIZE * 3;        
         IO.write(f, offset, buff, 0, buff.length);
     }
@@ -120,7 +120,7 @@ public class Key extends Node{
      * Write the key to file
      */
     public void write(FileChannel f) throws IOException {
-        byte[] nameBuff = B.fromSmallString(getName());
+        byte[] nameBuff = B.fromString(getName());
         byte[] buff = new byte[POINTER_SIZE * 3 + nameBuff.length];
         int offset = 0;
         arraycopy(B.fromLong(getRecordPos()), 0, buff, offset, POINTER_SIZE);
