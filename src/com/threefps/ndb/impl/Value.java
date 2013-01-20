@@ -177,7 +177,7 @@ public class Value extends Node {
         int size = POINTER_SIZE * 5 + 2 + TIMESTAMP_SIZE;
         byte[] buff = new byte[size];
         if (f.read(pos, buff, 0, size) != size) {
-            throw new DataException("Cannot read value header");
+            throw new DataException("Cannot read value header for record #" + pos);
         }
 
         Value v = new Value();
@@ -205,7 +205,7 @@ public class Value extends Node {
         size = t.size();
         buff = new byte[size];
         if (f.read(pos + offset, buff, 0, size) != size) {
-            throw new DataException("Cannot read value data");
+            throw new DataException("Cannot read value data for record #" + pos);
         }
         offset += size;
 
@@ -214,13 +214,13 @@ public class Value extends Node {
             byte len = buff[0];
             buff = new byte[len];
             if (f.read(pos + offset, buff, 0, len) != len)
-                throw new DataException("Cannot read string value");
+                throw new DataException("Cannot read string value for record #" + pos);
             
         } else if(t == DataType.BIG_STRING || t == DataType.BINARY) {
             int len = B.toInt(buff, 4);
             buff = new byte[len];
             if (f.read(pos + offset, buff, 0, len) != len)
-                throw new DataException("Cannot read big string value or binary");
+                throw new DataException("Cannot read big string value or binary for record #" + pos);
         }
         
         v.setRaw(buff);

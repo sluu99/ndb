@@ -33,6 +33,14 @@ public interface Table {
     public Record getRecord(long id) throws IOException, DataException;
     
     /**
+     * Get the last created record
+     * @return
+     * @throws IOException
+     * @throws DataException 
+     */
+    public Record getLastRecord() throws IOException, DataException;
+    
+    /**
      * Close the table and all the files associated with it
      */
     public void close() throws IOException;

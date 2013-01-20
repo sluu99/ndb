@@ -108,4 +108,11 @@ public class TableImpl implements Table {
     public Record getRecord(long id) throws DataException, IOException {
         return RecordImpl.read(this, id);
     }
+
+    @Override
+    public Record getLastRecord() throws IOException, DataException {
+        return RecordImpl.read(this, getHeader().getNewestRecordPos());
+    }
+    
+    
 }

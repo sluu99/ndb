@@ -65,7 +65,7 @@ public class RecordImpl extends Node implements Record {
         int size = TIMESTAMP_SIZE + TIMESTAMP_SIZE + POINTER_SIZE + POINTER_SIZE;
         byte[] b = new byte[size];
         if (t.getFile().read(pos, b, 0, size) != size) {
-            throw new DataException("Cannot read record from file");
+            throw new DataException("Cannot read #" + pos + " record from file");
         }
         RecordImpl rec = new RecordImpl();
         rec.setTable(t);
@@ -379,7 +379,7 @@ public class RecordImpl extends Node implements Record {
     private byte[] getRawDataTyped(String key, DataType type) throws IOException, DataException  {
         Value v = getValue(key);
         if (v.getType() != type)
-            throw new DataException("The raw data is of type " + v.getType() + ", not " + type);
+            throw new DataException("'" + key + "' is of type " + v.getType() + ", not " + type);
         return v.getRaw();
     }
     
