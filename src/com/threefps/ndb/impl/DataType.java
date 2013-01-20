@@ -20,6 +20,11 @@ public enum DataType {
     STRING,
     BIG_STRING;
     
+    /**
+     * Get a data type from its byte representation
+     * @param b
+     * @return 
+     */
     public static DataType fromByte(byte b) {
         switch (b) {
             case 1: return BYTE;
@@ -35,6 +40,10 @@ public enum DataType {
         return NONE;
     }
     
+    /**
+     * Get byte representation of the data type
+     * @return 
+     */
     public byte toByte() {
         switch (this) {
             case BYTE: return 1;
@@ -63,6 +72,28 @@ public enum DataType {
             case FLOAT: return 4;
             case DOUBLE: return 8;
             case BOOL: return 1;            
+        }
+        return 0;
+    }
+    
+    /**
+     * Get the data type's rank
+     * @return 
+     */
+    public int rank() {
+        switch (this) {
+            case BYTE:
+            case SHORT:
+            case INT:
+            case LONG:
+            case FLOAT:
+            case DOUBLE:
+                return 1;            
+            case BOOL:
+                return 2;
+            case STRING:
+            case BIG_STRING:
+                return 3;
         }
         return 0;
     }
