@@ -25,6 +25,17 @@ public class B {
     }
     
     /**
+     * Convert a short to a byte array
+     * @param s
+     * @return 
+     */
+    public static byte[] fromShort(short s) {
+        ByteBuffer buff = ByteBuffer.allocate(2);
+        buff.putShort(s);
+        return buff.array();
+    }
+    
+    /**
      * Convert an int to a byte array
      * @param i
      * @return 
@@ -44,6 +55,37 @@ public class B {
         ByteBuffer buff = ByteBuffer.allocate(8);
         buff.putLong(l);
         return buff.array();
+    }
+    
+    /**
+     * Convert a float to a byte array
+     * @param f
+     * @return 
+     */
+    public static byte[] fromFloat(float f) {
+        ByteBuffer buff = ByteBuffer.allocate(4);
+        buff.putFloat(f);
+        return buff.array();
+    }
+    
+    /**
+     * Convert a double to a byte array
+     * @param d
+     * @return 
+     */
+    public static byte[] fromDouble(double d) {
+        ByteBuffer buff = ByteBuffer.allocate(8);
+        buff.putDouble(d);
+        return buff.array();
+    }
+    
+    /**
+     * Convert a boolean to a byte array
+     * @param b
+     * @return 
+     */
+    public static byte[] fromBool(boolean b) {
+        return b? fromByte((byte)1) : fromByte((byte)0);
     }
     
     /**
