@@ -5,8 +5,6 @@
 package com.threefps.ndb;
 
 import com.threefps.ndb.errors.DataException;
-import com.threefps.ndb.errors.LimitException;
-import com.threefps.ndb.errors.NotFoundException;
 import java.io.IOException;
 
 /**
@@ -32,7 +30,7 @@ public interface Table {
      * @param id
      * @return 
      */
-    public Record getRecord(int id) throws NotFoundException, DataException;
+    public Record getRecord(long id) throws IOException, DataException;
     
     /**
      * Close the table and all the files associated with it

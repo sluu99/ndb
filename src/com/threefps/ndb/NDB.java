@@ -4,8 +4,8 @@
  */
 package com.threefps.ndb;
 
-import com.threefps.ndb.impl.TableImpl;
 import com.threefps.ndb.errors.DataException;
+import com.threefps.ndb.impl.TableImpl;
 import java.io.IOException;
 import java.util.HashMap;
 

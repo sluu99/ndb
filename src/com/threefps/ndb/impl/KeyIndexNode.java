@@ -4,8 +4,6 @@
  */
 package com.threefps.ndb.impl;
 
-import com.threefps.ndb.impl.Node;
-
 /**
  * Represents a key-index node
  * @author sluu

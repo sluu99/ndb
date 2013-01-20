@@ -7,7 +7,7 @@ package com.threefps.ndb.impl;
 import com.threefps.ndb.Record;
 import com.threefps.ndb.Table;
 import com.threefps.ndb.errors.DataException;
-import com.threefps.ndb.errors.NotFoundException;
+import com.threefps.ndb.utils.DataFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -23,15 +23,15 @@ import java.nio.file.StandardOpenOption;
 public class TableImpl implements Table {
 
     private static final byte CURRENT_VERSION = 1;
-    FileChannel file = null;
+    DataFile file = null;
     TableHeaderImpl header = new TableHeaderImpl();
 
     // <editor-fold defaultstate="collapsed" desc="Getters and Setters">  
-    private void setFile(FileChannel file) {
+    private void setFile(DataFile file) {
         this.file = file;
     }
 
-    private FileChannel getFile() {
+    public DataFile getFile() {
         return file;
     }
 
@@ -65,7 +65,8 @@ public class TableImpl implements Table {
         }
 
         TableImpl table = new TableImpl();
-        FileChannel f = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
+        FileChannel channel = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
+        DataFile f = new DataFile(channel);
         table.setFile(f);
         table.getHeader();
 
@@ -75,7 +76,6 @@ public class TableImpl implements Table {
             table.getHeader().setName(name);
             table.getHeader().setVersion(TableImpl.CURRENT_VERSION);
             table.getHeader().write(f);
-            table.getFile().force(false);
         }
         return table;
     }
@@ -85,7 +85,7 @@ public class TableImpl implements Table {
      */
     @Override
     public void close() throws IOException {
-        FileChannel f = getFile();
+        FileChannel f = getFile().getChannel();
         if (f != null && f.isOpen()) {
             f.force(true);
             f.close();
@@ -95,18 +95,17 @@ public class TableImpl implements Table {
     @Override
     public RecordImpl createRecord() throws IOException, DataException {
         TableHeaderImpl h = getHeader();
-        RecordImpl r = RecordImpl.create(getFile(), h.getNewestRecordPos());
+        RecordImpl r = RecordImpl.create(this, h.getNewestRecordPos());
         h.setNewestRecordPos(r.getPos());
         h.incCount();
-        FileChannel f = getFile();
+        DataFile f = getFile();
         h.writeNewestRecord(f);
         h.writeRecordCount(f);
-        getFile().force(false);
         return r;
     }
 
     @Override
-    public Record getRecord(int id) throws NotFoundException {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public Record getRecord(long id) throws DataException, IOException {
+        return RecordImpl.read(this, id);
     }
 }

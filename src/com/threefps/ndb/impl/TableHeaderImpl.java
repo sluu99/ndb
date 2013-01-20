@@ -4,19 +4,18 @@
  */
 package com.threefps.ndb.impl;
 
-import com.threefps.ndb.TableHeader;
 import static com.threefps.ndb.Const.*;
+import com.threefps.ndb.TableHeader;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
-import com.threefps.ndb.utils.IO;
+import com.threefps.ndb.utils.DataFile;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 
 /**
  * Implementation of the table header
  * @author sluu
  */
-class TableHeaderImpl implements TableHeader {
+public class TableHeaderImpl implements TableHeader {
 
     private static final int VERSION_SIZE = 1; // Size of the version field
     private static final int RECORD_COUNT_SIZE = 8; // Number of bytes
@@ -83,11 +82,11 @@ class TableHeaderImpl implements TableHeader {
     /**
      * Load table header from file
      */
-    public void read(FileChannel f) throws DataException, IOException {
+    public void read(DataFile f) throws DataException, IOException {
         // read the fixed size data
         int len = VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE + 1;        
         byte[] b = new byte[len];
-        if (IO.read(f, 0, b, 0, len) != len)
+        if (f.read(0, b, 0, len) != len)
             throw new DataException("Cannot read header information");
         
         int offset = 0;
@@ -99,7 +98,7 @@ class TableHeaderImpl implements TableHeader {
         // read the table name
         byte tableNameLen = b[offset]; offset += 1;
         b = new byte[tableNameLen];
-        if (IO.read(f, offset, b, 0, tableNameLen) != tableNameLen)
+        if (f.read(offset, b, 0, tableNameLen) != tableNameLen)
             throw new DataException("Cannot read table name");
         setName(new String(b, 0, tableNameLen));
     }
@@ -107,7 +106,7 @@ class TableHeaderImpl implements TableHeader {
     /**
      * Write table header to file
      */
-    public void write(FileChannel f) throws IOException {
+    public void write(DataFile f) throws IOException {
         writeVersion(f);
         writeRecordCount(f);
         writeNewestRecord(f);
@@ -120,29 +119,29 @@ class TableHeaderImpl implements TableHeader {
      *
      * @throws IOException
      */
-    public void writeVersion(FileChannel f) throws IOException {
-        IO.write(f, 0, B.fromByte(getVersion()), 0, VERSION_SIZE);
+    public void writeVersion(DataFile f) throws IOException {
+        f.write(0, B.fromByte(getVersion()), 0, VERSION_SIZE);
     }
     
-    public void writeRecordCount(FileChannel f) throws IOException {
-        IO.write(f, VERSION_SIZE, B.fromLong(getRecordCount()), 0, 8);
+    public void writeRecordCount(DataFile f) throws IOException {
+        f.write(VERSION_SIZE, B.fromLong(getRecordCount()), 0, 8);
     }
     
-    public void writeNewestRecord(FileChannel f) throws IOException {
-        IO.write(
-                f, VERSION_SIZE + RECORD_COUNT_SIZE, 
+    public void writeNewestRecord(DataFile f) throws IOException {
+        f.write(
+                VERSION_SIZE + RECORD_COUNT_SIZE, 
                 B.fromLong(getNewestRecordPos()), 0, POINTER_SIZE);
     }
     
-    public void writeKeyIndexRootPos(FileChannel f) throws IOException {
-        IO.write(
-                f, VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE, 
+    public void writeKeyIndexRootPos(DataFile f) throws IOException {
+        f.write(
+                VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE, 
                 B.fromLong(getKeyIndexRootPos()), 0, POINTER_SIZE);
     }
     
-    public void writeTableName(FileChannel f) throws IOException {
+    public void writeTableName(DataFile f) throws IOException {
         byte[] buff = B.fromString(getName());
         int offset = VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE;
-        IO.write(f, offset, buff, 0, buff.length); 
+        f.write(offset, buff, 0, buff.length); 
     }
 }
