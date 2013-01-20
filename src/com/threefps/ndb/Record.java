@@ -34,5 +34,13 @@ public interface Record {
     public Record getPrevRecord();
     
     
+    public void setByte(String key, byte value) throws IOException, DataException;
+    public void setShort(String key, short value) throws IOException, DataException;
+    public void setInt(String key, int value) throws IOException, DataException;
+    public void setLong(String key, long value) throws IOException, DataException;
+    public void setFloat(String key, float value) throws IOException, DataException;
+    public void setDouble(String key, double value) throws IOException, DataException;
+    public void setBoolean(String key, boolean value) throws IOException, DataException;    
     public void setString(String key, String value) throws IOException, DataException;
+    public void setBigString(String key, String value) throws IOException, DataException;
 }

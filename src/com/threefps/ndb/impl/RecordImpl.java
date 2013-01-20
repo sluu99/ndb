@@ -231,6 +231,18 @@ public class RecordImpl extends Node implements Record {
         }
     }
     
+    /**
+     * Write a new value
+     * @param k
+     * @param type
+     * @param data 
+     */
+    private void writeValue(String k, DataType type, byte[] data) throws IOException, DataException {
+        Key key = getKey(k);
+        key.writeValue(getFile(), type, data);
+        updateTimestamp();
+    }
+    
     // </editor-fold>
 
     /**
@@ -259,18 +271,6 @@ public class RecordImpl extends Node implements Record {
         }
         return key;
     }
-
-    @Override
-    public RecordImpl getPrevRecord() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public void setString(String k, String v) throws IOException, DataException {        
-        Key key = getKey(k);
-        key.writeValue(getFile(), DataType.STRING, B.fromString(v));
-        updateTimestamp();
-    }
     
     /**
      * Update the update timestamp and write to file
@@ -278,5 +278,55 @@ public class RecordImpl extends Node implements Record {
     private void updateTimestamp() throws DataException, IOException {
         setUpdateTime(System.currentTimeMillis() / 1000);
         writeUpdateTime();
+    }
+    
+    @Override
+    public RecordImpl getPrevRecord() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setByte(String key, byte value) throws IOException, DataException {
+        writeValue(key, DataType.BYTE, B.fromByte(value));
+    }
+
+    @Override
+    public void setShort(String key, short value) throws IOException, DataException {
+        writeValue(key, DataType.SHORT, B.fromShort(value));
+    }
+
+    @Override
+    public void setInt(String key, int value) throws IOException, DataException {
+        writeValue(key, DataType.INT, B.fromInt(value));
+    }
+
+    @Override
+    public void setLong(String key, long value) throws IOException, DataException {
+        writeValue(key, DataType.LONG, B.fromLong(value));
+    }
+
+    @Override
+    public void setFloat(String key, float value) throws IOException, DataException {
+        writeValue(key, DataType.FLOAT, B.fromFloat(value));
+    }
+
+    @Override
+    public void setDouble(String key, double value) throws IOException, DataException {
+        writeValue(key, DataType.DOUBLE, B.fromDouble(value));
+    }
+
+    @Override
+    public void setBoolean(String key, boolean value) throws IOException, DataException {
+        writeValue(key, DataType.BOOLEAN, B.fromBool(value));
+    }
+
+    @Override
+    public void setString(String k, String v) throws IOException, DataException {        
+        writeValue(k, DataType.STRING, B.fromString(v));
+    }
+    
+    @Override
+    public void setBigString(String key, String value) throws IOException, DataException {
+        writeValue(key, DataType.BIG_STRING, B.fromBigString(value));
     }
 }
