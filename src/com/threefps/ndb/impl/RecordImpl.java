@@ -317,7 +317,7 @@ public class RecordImpl extends Node implements Record {
 
     @Override
     public void setBoolean(String key, boolean value) throws IOException, DataException {
-        writeValue(key, DataType.BOOLEAN, B.fromBool(value));
+        writeValue(key, DataType.BOOL, B.fromBool(value));
     }
 
     @Override

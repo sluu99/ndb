@@ -16,7 +16,7 @@ public enum DataType {
     LONG,
     FLOAT,
     DOUBLE,
-    BOOLEAN,
+    BOOL,
     STRING,
     BIG_STRING;
     
@@ -28,7 +28,7 @@ public enum DataType {
             case 4: return LONG;
             case 5: return FLOAT;
             case 6: return DOUBLE;
-            case 7: return BOOLEAN;
+            case 7: return BOOL;
             case 8: return STRING;
             case 9: return BIG_STRING;
         }
@@ -43,7 +43,7 @@ public enum DataType {
             case LONG: return 4;
             case FLOAT: return 5;
             case DOUBLE: return 6;
-            case BOOLEAN: return 7;
+            case BOOL: return 7;
             case STRING: return 8;
             case BIG_STRING: return 9;
         }
@@ -62,7 +62,7 @@ public enum DataType {
             case LONG: return 8;
             case FLOAT: return 4;
             case DOUBLE: return 8;
-            case BOOLEAN: return 1;            
+            case BOOL: return 1;            
         }
         return 0;
     }
