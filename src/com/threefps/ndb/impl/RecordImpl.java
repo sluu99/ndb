@@ -4,8 +4,8 @@
  */
 package com.threefps.ndb.impl;
 
-import com.threefps.ndb.DataType;
 import static com.threefps.ndb.Const.*;
+import com.threefps.ndb.DataType;
 import com.threefps.ndb.Record;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
@@ -19,7 +19,7 @@ import java.util.ArrayList;
  * @author sluu
  */
 public class RecordImpl extends Node implements Record {
-
+    
     private long creationTime = 0;
     private long updateTime = 0;
     private TableImpl table = null;
@@ -47,17 +47,20 @@ public class RecordImpl extends Node implements Record {
         }
         return rec;
     }
-    
+
     /**
      * Read a record from file
+     *
      * @param t
      * @param pos
      * @return
      * @throws IOException
-     * @throws DataException 
+     * @throws DataException
      */
     public static RecordImpl read(TableImpl t, long pos) throws IOException, DataException {
-        if (pos <= 0) return null;
+        if (pos <= 0) {
+            return null;
+        }
         
         int size = TIMESTAMP_SIZE + TIMESTAMP_SIZE + POINTER_SIZE + POINTER_SIZE;
         byte[] b = new byte[size];
@@ -80,61 +83,60 @@ public class RecordImpl extends Node implements Record {
         
         return rec;
     }
-    
+
     // <editor-fold desc="Getters and Setters">
     @Override
     public long getId() {
         return getPos();
     }
-
+    
     @Override
     public long getCreationTime() {
         return creationTime;
     }
-
+    
     @Override
     public long getUpdateTime() {
         return updateTime;
     }
-
+    
     private void setCreationTime(long time) {
         creationTime = time;
     }
-
+    
     private void setUpdateTime(long time) {
         updateTime = time;
     }
-
+    
     public DataFile getFile() {
         return table.getFile();
     }
-
+    
     public long getPrevRecordPos() {
         return prevRecordPos;
     }
-
+    
     private void setPrevRecordPos(long pos) {
         prevRecordPos = pos;
     }
-
+    
     public long getKeyPos() {
         return keyPos;
     }
-
+    
     private void setKeyPos(long keyPos) {
         this.keyPos = keyPos;
     }
-
+    
     public TableImpl getTable() {
         return table;
     }
-
+    
     private void setTable(TableImpl table) {
         this.table = table;
     }
 
     // </editor-fold>
-    
     // <editor-fold desc="Read & Write">
     /**
      * Check the position before writing
@@ -216,8 +218,9 @@ public class RecordImpl extends Node implements Record {
 
     /**
      * Read all the keys associated with this record
+     *
      * @throws IOException
-     * @throws DataException 
+     * @throws DataException
      */
     private void readKeys() throws IOException, DataException {        
         long pos = getKeyPos();
@@ -225,27 +228,27 @@ public class RecordImpl extends Node implements Record {
         DataFile f = getFile();
         while (pos != 0) {
             Key key = Key.read(f, pos);            
-            synchronized(keys) {
+            synchronized (keys) {
                 keys.add(key);
             }
             pos = key.getNextPos();
         }
     }
-    
+
     /**
      * Write a new value
+     *
      * @param k
      * @param type
-     * @param data 
+     * @param data
      */
     private void writeValue(String k, DataType type, byte[] data) throws IOException, DataException {
         Key key = getKey(k, true);
         key.writeValue(getFile(), type, data);
         updateTimestamp();
     }
-    
-    // </editor-fold>
 
+    // </editor-fold>
     /**
      * Look for a key or create one
      *
@@ -257,7 +260,7 @@ public class RecordImpl extends Node implements Record {
      */
     private Key getKey(String k, boolean create) throws IOException, DataException {
         k = k.trim().toLowerCase();
-
+        
         for (Key key : keys) {
             if (key.getName().equals(k)) {
                 return key;
@@ -268,8 +271,8 @@ public class RecordImpl extends Node implements Record {
             Key key = Key.create(getFile(), getPos(), getKeyPos(), k);
             setKeyPos(key.getPos());
             writeKeyPos();
-
-            synchronized (keys) {            
+            
+            synchronized (keys) {                
                 keys.add(key);
             }
             return key;
@@ -277,7 +280,7 @@ public class RecordImpl extends Node implements Record {
         
         return null;
     }
-    
+
     /**
      * Update the update timestamp and write to file
      */
@@ -291,43 +294,62 @@ public class RecordImpl extends Node implements Record {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * Get value of a key
+     *
+     * @param k
+     * @return
+     * @throws IOException
+     * @throws DataException
+     */
+    private Value getValue(String k) throws IOException, DataException {
+        Key key = getKey(k, false);
+        if (key == null) {
+            throw new DataException(String.format("Cannot find key '%s'", k));
+        }
+        Value v = key.getValue(getFile());
+        if (v == null) {
+            throw new DataException(String.format("Cannot get value for key '%s'", k));
+        }
+        return v;
+    }
+
     // <editor-fold desc="Value setters">
-    
     @Override
     public void setByte(String key, byte value) throws IOException, DataException {
         writeValue(key, DataType.BYTE, B.fromByte(value));
     }
-
+    
     @Override
     public void setShort(String key, short value) throws IOException, DataException {
         writeValue(key, DataType.SHORT, B.fromShort(value));
     }
-
+    
     @Override
     public void setInt(String key, int value) throws IOException, DataException {
         writeValue(key, DataType.INT, B.fromInt(value));
     }
-
+    
     @Override
     public void setLong(String key, long value) throws IOException, DataException {
         writeValue(key, DataType.LONG, B.fromLong(value));
     }
-
+    
     @Override
     public void setFloat(String key, float value) throws IOException, DataException {
         writeValue(key, DataType.FLOAT, B.fromFloat(value));
     }
-
+    
     @Override
     public void setDouble(String key, double value) throws IOException, DataException {
         writeValue(key, DataType.DOUBLE, B.fromDouble(value));
     }
-
+    
     @Override
-    public void setBoolean(String key, boolean value) throws IOException, DataException {
+    public void setBool(String key, boolean value) throws IOException, DataException {
         writeValue(key, DataType.BOOL, B.fromBool(value));
     }
-
+    
     @Override
     public void setString(String k, String v) throws IOException, DataException {        
         writeValue(k, DataType.STRING, B.fromString(v));
@@ -342,6 +364,88 @@ public class RecordImpl extends Node implements Record {
     public void setBin(String key, byte[] value) throws IOException, DataException {
         writeValue(key, DataType.BINARY, B.fromBin(value));
     }
-    
+
     // </editor-fold>
+    // <editor-fold desc="Value getters">
+    
+    /**
+     * Check data type and get the raw data
+     * @param key
+     * @param type
+     * @return
+     * @throws IOException
+     * @throws DataException 
+     */
+    private byte[] getRawDataTyped(String key, DataType type) throws IOException, DataException  {
+        Value v = getValue(key);
+        if (v.getType() != type)
+            throw new DataException("The raw data is of type " + v.getType() + ", not " + type);
+        return v.getRaw();
+    }
+    
+    @Override
+    public DataType getType(String key) throws IOException, DataException {
+        return getValue(key).getType();
+    }    
+    
+    @Override
+    public long getTimestamp(String key) throws IOException, DataException {
+        return getValue(key).getTimestamp();
+    }
+    
+    @Override
+    public byte[] getRaw(String key) throws IOException, DataException {
+        return getValue(key).getRaw();
+    }
+    
+    @Override
+    public byte getByte(String key) throws IOException, DataException {
+        return getRawDataTyped(key, DataType.BYTE)[0];
+    }
+    
+    @Override
+    public short getShort(String key) throws IOException, DataException {
+        return B.toShort(getRawDataTyped(key, DataType.SHORT), 0);
+    }
+    
+    @Override
+    public int getInt(String key) throws IOException, DataException {
+        return B.toInt(getRawDataTyped(key, DataType.INT), 0);
+    }
+    
+    @Override
+    public long getLong(String key) throws IOException, DataException {
+        return B.toLong(getRawDataTyped(key, DataType.LONG), 0);
+    }
+    
+    @Override
+    public float getFloat(String key) throws IOException, DataException {
+        return B.toFloat(getRawDataTyped(key, DataType.FLOAT), 0);
+    }
+    
+    @Override
+    public double getDouble(String key) throws IOException, DataException {
+        return B.toDouble(getRawDataTyped(key, DataType.DOUBLE), 0);
+    }
+    
+    @Override
+    public boolean getBool(String key) throws IOException, DataException {
+        return B.toBool(getRawDataTyped(key, DataType.BOOL), 0);
+    }
+    
+    @Override
+    public String getString(String key) throws IOException, DataException {
+        return new String(getRawDataTyped(key, DataType.STRING));
+    }
+    
+    @Override
+    public String getBigString(String key) throws IOException, DataException {
+        return new String(getRawDataTyped(key, DataType.BIG_STRING));
+    }
+    
+    @Override
+    public byte[] getBin(String key) throws IOException, DataException {
+        return getRawDataTyped(key, DataType.BIG_STRING);
+    }
+    // </editor-fold>    
 }

@@ -130,13 +130,23 @@ public class B {
     }
     
     /**
+     * Get a short out of a byte array
+     * @param b
+     * @param offset
+     * @return 
+     */
+    public static short toShort(byte[] b, int offset) {
+        return ByteBuffer.wrap(b).getShort(offset);
+    }
+    
+    /**
      * Get an int out of a byte array
      * @param b
      * @param offset
      * @return 
      */
     public static int toInt(byte[] b, int offset) {
-        return ByteBuffer.wrap(b, offset, 4).getInt();        
+        return ByteBuffer.wrap(b).getInt(offset);        
     }
     
     /**
@@ -146,6 +156,36 @@ public class B {
      * @return 
      */
     public static long toLong(byte[] b, int offset) {
-        return ByteBuffer.wrap(b, offset, 8).getLong();        
+        return ByteBuffer.wrap(b).getLong(offset);
+    }
+    
+    /**
+     * Get a float out of a byte array
+     * @param b
+     * @param offset
+     * @return 
+     */
+    public static float toFloat(byte[] b, int offset) {
+        return ByteBuffer.wrap(b).getFloat(offset);
+    }
+    
+    /**
+     * Get a double out of a byte array
+     * @param b
+     * @param offset
+     * @return 
+     */
+    public static double toDouble(byte[] b, int offset) {
+        return ByteBuffer.wrap(b).getDouble(offset);
+    }
+    
+    /**
+     * Get a boolean out of a byte array
+     * @param b
+     * @param offset
+     * @return 
+     */
+    public static boolean toBool(byte[] b, int offset) {
+        return b[offset] == 1;
     }
 }

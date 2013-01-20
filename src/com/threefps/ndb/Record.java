@@ -40,8 +40,23 @@ public interface Record {
     public void setLong(String key, long value) throws IOException, DataException;
     public void setFloat(String key, float value) throws IOException, DataException;
     public void setDouble(String key, double value) throws IOException, DataException;
-    public void setBoolean(String key, boolean value) throws IOException, DataException;    
+    public void setBool(String key, boolean value) throws IOException, DataException;    
     public void setString(String key, String value) throws IOException, DataException;
     public void setBigString(String key, String value) throws IOException, DataException;
     public void setBin(String key, byte[] value) throws IOException, DataException;
+    
+    public byte getByte(String key) throws IOException, DataException;
+    public short getShort(String key) throws IOException, DataException;
+    public int getInt(String key) throws IOException, DataException;
+    public long getLong(String key) throws IOException, DataException;
+    public float getFloat(String key) throws IOException, DataException;
+    public double getDouble(String key) throws IOException, DataException;
+    public boolean getBool(String key) throws IOException, DataException;    
+    public String getString(String key) throws IOException, DataException;
+    public String getBigString(String key) throws IOException, DataException;
+    public byte[] getBin(String key) throws IOException, DataException;
+    
+    public DataType getType(String key) throws IOException, DataException;
+    public byte[] getRaw(String key) throws IOException, DataException;
+    public long getTimestamp(String key) throws IOException, DataException;   
 }
