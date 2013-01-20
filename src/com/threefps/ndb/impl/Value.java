@@ -4,7 +4,9 @@
  */
 package com.threefps.ndb.impl;
 
+import com.threefps.ndb.DataType;
 import static com.threefps.ndb.Const.*;
+import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
 import com.threefps.ndb.utils.DataFile;
 import java.io.IOException;
@@ -106,8 +108,9 @@ public class Value extends Node {
 
     /**
      * Write the value to file
+     *
      * @param f
-     * @throws IOException 
+     * @throws IOException
      */
     private void write(DataFile f) throws IOException {
         byte[] data = getRaw();
@@ -148,13 +151,80 @@ public class Value extends Node {
         synchronized (f) {
             v.setPos(f.getChannel().size());
             v.setRecordPos(recordPos);
-            v.setFlag((byte)1);
+            v.setFlag((byte) 1);
             v.setTimestamp(System.currentTimeMillis() / 1000);
             v.setPrevVersionPos(prevVersionPos);
             v.setType(type);
             v.setRaw(data);
             v.write(f);
         }
+        return v;
+    }
+
+    /**
+     * Read a value from file
+     * @param f
+     * @param pos
+     * @return
+     * @throws DataException
+     * @throws IOException 
+     */
+    public static Value read(DataFile f, long pos) throws DataException, IOException {
+        if (pos == 0) {
+            return null;
+        }
+
+        int size = POINTER_SIZE * 5 + 2 + TIMESTAMP_SIZE;
+        byte[] buff = new byte[size];
+        if (f.read(pos, buff, 0, size) != size) {
+            throw new DataException("Cannot read value header");
+        }
+
+        Value v = new Value();
+        int offset = 0;
+
+        v.setRecordPos(B.toLong(buff, offset));
+        offset += POINTER_SIZE;
+        v.setFlag(buff[offset]);
+        offset++;
+        v.setTimestamp(B.toLong(buff, offset));
+        offset += TIMESTAMP_SIZE;
+        v.setPrevVersionPos(B.toLong(buff, offset));
+        offset += POINTER_SIZE;
+        v.setTwinPos(B.toLong(buff, offset));
+        offset += POINTER_SIZE;
+        v.setLeftPos(B.toLong(buff, offset));
+        offset += POINTER_SIZE;
+        v.setRightPos(B.toLong(buff, offset));
+        offset += POINTER_SIZE;
+        v.setType(DataType.fromByte(buff[offset]));
+        offset++;
+
+        // read the next few bytes for the data or string length
+        DataType t = v.getType();
+        size = t.size();
+        buff = new byte[size];
+        if (f.read(pos + offset, buff, 0, size) != size) {
+            throw new DataException("Cannot read value data");
+        }
+        offset += size;
+
+        // if the type is string, we have only read the string length
+        if (t == DataType.STRING) {            
+            byte len = buff[0];
+            buff = new byte[len];
+            if (f.read(pos + offset, buff, 0, len) != len)
+                throw new DataException("Cannot read string value");
+            
+        } else if(t == DataType.BIG_STRING) {
+            int len = B.toInt(buff, 4);
+            buff = new byte[len];
+            if (f.read(pos + offset, buff, 0, len) != len)
+                throw new DataException("Cannot read big string value");
+        }
+        
+        v.setRaw(buff);
+
         return v;
     }
 }

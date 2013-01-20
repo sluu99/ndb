@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.threefps.ndb.impl;
+package com.threefps.ndb;
 
 /**
  * Field data types
@@ -63,7 +63,7 @@ public enum DataType {
      * Return the size for this data type. Except for STRING, which will return 0
      * @return 
      */
-    public byte size() {
+    public int size() {
         switch (this) {
             case BYTE: return 1;
             case SHORT: return 2;
@@ -71,7 +71,9 @@ public enum DataType {
             case LONG: return 8;
             case FLOAT: return 4;
             case DOUBLE: return 8;
-            case BOOL: return 1;            
+            case BOOL: return 1;   
+            case STRING: return 1;
+            case BIG_STRING: return 4;
         }
         return 0;
     }

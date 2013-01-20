@@ -32,7 +32,8 @@ public class DataFile {
     }
     
     /**
-     * Bump the number of bytes since last flush
+     * Bump the number of bytes since last flush and perform a flush if
+     * it's over the limit.
      * @param c 
      */
     public void add(int c) throws IOException {

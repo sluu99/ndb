@@ -4,6 +4,7 @@
  */
 package com.threefps.ndb.impl;
 
+import com.threefps.ndb.DataType;
 import static com.threefps.ndb.Const.*;
 import com.threefps.ndb.Record;
 import com.threefps.ndb.errors.DataException;
@@ -238,7 +239,7 @@ public class RecordImpl extends Node implements Record {
      * @param data 
      */
     private void writeValue(String k, DataType type, byte[] data) throws IOException, DataException {
-        Key key = getKey(k);
+        Key key = getKey(k, true);
         key.writeValue(getFile(), type, data);
         updateTimestamp();
     }
@@ -249,11 +250,12 @@ public class RecordImpl extends Node implements Record {
      * Look for a key or create one
      *
      * @param k
+     * @param create Should a new key be created if not found?
      * @return
      * @throws IOException
      * @throws DataException
      */
-    private Key getKey(String k) throws IOException, DataException {
+    private Key getKey(String k, boolean create) throws IOException, DataException {
         k = k.trim().toLowerCase();
 
         for (Key key : keys) {
@@ -261,15 +263,19 @@ public class RecordImpl extends Node implements Record {
                 return key;
             }
         }
+        
+        if (create) {
+            Key key = Key.create(getFile(), getPos(), getKeyPos(), k);
+            setKeyPos(key.getPos());
+            writeKeyPos();
 
-        Key key = Key.create(getFile(), getPos(), getKeyPos(), k);
-        setKeyPos(key.getPos());
-        writeKeyPos();
-
-        synchronized (keys) {            
-            keys.add(key);
+            synchronized (keys) {            
+                keys.add(key);
+            }
+            return key;
         }
-        return key;
+        
+        return null;
     }
     
     /**

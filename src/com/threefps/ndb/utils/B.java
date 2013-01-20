@@ -117,6 +117,16 @@ public class B {
     }
     
     /**
+     * Get an int out of a byte array
+     * @param b
+     * @param offset
+     * @return 
+     */
+    public static int toInt(byte[] b, int offset) {
+        return ByteBuffer.wrap(b, offset, 4).getInt();        
+    }
+    
+    /**
      * Get a long out of a byte array
      * @param b
      * @param offset
