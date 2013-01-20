@@ -5,6 +5,7 @@
 package com.threefps.ndb.impl;
 
 import static com.threefps.ndb.Const.*;
+import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
 import com.threefps.ndb.utils.DataFile;
 import java.io.IOException;
@@ -19,7 +20,6 @@ public class Key extends Node{
     private long recordPos = 0; 
     private long nextPos = 0;
     private long valuePos = 0;
-    private byte nameSize = 0;
     private String name = null;
     private Value value = null;
 
@@ -40,6 +40,40 @@ public class Key extends Node{
             k.write(f);
         }
         return k;
+    }
+    
+    /**
+     * Read a key from file
+     * @param f
+     * @param pos
+     * @return
+     * @throws IOException
+     * @throws DataException 
+     */
+    public static Key read(DataFile f, long pos) throws IOException, DataException {
+        if (pos <= 0) return null;
+        
+        Key key = new Key();
+        key.setPos(pos);
+        
+        // read the key over head
+        int size = POINTER_SIZE * 3 + 1;
+        byte[] buff = new byte[size];        
+        if (f.read(pos, buff, 0, size) != size)
+            throw new DataException("Error reading record key");        
+        int offset = 0;
+        key.setRecordPos(B.toLong(buff, offset)); offset += POINTER_SIZE;
+        key.setNextPos(B.toLong(buff, offset)); offset += POINTER_SIZE;
+        key.setValuePos(B.toLong(buff, offset)); offset += POINTER_SIZE;        
+        
+        // read key name
+        size = buff[offset]; offset++;
+        buff = new byte[size];
+        if (f.read(pos + offset, buff, 0, size) != size)
+            throw new DataException("Error reading key name");
+        key.setName(new String(buff, 0, size));
+        
+        return key;
     }
     
     // <editor-fold desc="Getters and Setters">
@@ -69,14 +103,6 @@ public class Key extends Node{
             value = null;
     }
 
-    public byte getNameSize() {
-        return nameSize;
-    }
-
-    public void setNameSize(byte nameSize) {
-        this.nameSize = nameSize;
-    }
-
     public String getName() {
         return name;
     }
@@ -86,7 +112,7 @@ public class Key extends Node{
     }  
     // </editor-fold>
     
-    // <editor-fold desc="Writter">
+    // <editor-fold desc="Writters">
     
     public void writeRecordPos(DataFile f) throws IOException {
         f.write(getPos(), B.fromLong(getRecordPos()), 0, POINTER_SIZE);

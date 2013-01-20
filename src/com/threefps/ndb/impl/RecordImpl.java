@@ -64,6 +64,7 @@ public class RecordImpl extends Node implements Record {
             throw new DataException("Cannot read record from file");
         }
         RecordImpl rec = new RecordImpl();
+        rec.setTable(t);
         rec.setPos(pos);
         int offset = 0;
         rec.setCreationTime(B.toLong(b, offset));
@@ -73,6 +74,8 @@ public class RecordImpl extends Node implements Record {
         rec.setPrevRecordPos(B.toLong(b, offset));
         offset += POINTER_SIZE;
         rec.setKeyPos(B.toLong(b, offset));
+        
+        rec.readKeys();
         
         return rec;
     }
@@ -210,6 +213,24 @@ public class RecordImpl extends Node implements Record {
         getFile().write(getPos(), buff, 0, buff.length);
     }
 
+    /**
+     * Read all the keys associated with this record
+     * @throws IOException
+     * @throws DataException 
+     */
+    private void readKeys() throws IOException, DataException {        
+        long pos = getKeyPos();
+        
+        DataFile f = getFile();
+        while (pos != 0) {
+            Key key = Key.read(f, pos);            
+            synchronized(keys) {
+                keys.add(key);
+            }
+            pos = key.getNextPos();
+        }
+    }
+    
     // </editor-fold>
 
     /**
