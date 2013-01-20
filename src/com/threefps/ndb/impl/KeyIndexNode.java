@@ -2,7 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.threefps.ndb;
+package com.threefps.ndb.impl;
+
+import com.threefps.ndb.impl.Node;
 
 /**
  * Represents a key-index node

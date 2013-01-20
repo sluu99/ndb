@@ -2,26 +2,30 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.threefps.ndb;
+package com.threefps.ndb.impl;
 
 import static com.threefps.ndb.Const.*;
+import com.threefps.ndb.Record;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
 import com.threefps.ndb.utils.IO;
 import java.io.IOException;
+import static java.lang.System.arraycopy;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 
 /**
  *
  * @author sluu
  */
-class RecordImpl extends Node implements Record {
+public class RecordImpl extends Node implements Record {
 
     private long creationTime = 0;
     private long updateTime = 0;
     private FileChannel file = null;
     private long prevRecordPos = 0;
     private long keyPos = 0;
+    private final ArrayList<Key> keys = new ArrayList<>();
 
     // <editor-fold desc="Getters and Setters">
     @Override
@@ -72,6 +76,7 @@ class RecordImpl extends Node implements Record {
     }
     // </editor-fold>
 
+    // <editor-fold desc="Read & Write">
     /**
      * Check the position before writing
      *
@@ -139,10 +144,17 @@ class RecordImpl extends Node implements Record {
      * @throws DataException
      */
     public void write() throws IOException, DataException {
-        writeCreationTime();
-        writeUpdateTime();
-        writePrevRecordPos();
-        writeKeyPos();
+        checkPos();
+        byte[] buff = new byte[TIMESTAMP_SIZE * 2 + POINTER_SIZE * 2];
+        int offset = 0;
+        arraycopy(B.fromLong(getCreationTime()), 0, buff, offset, TIMESTAMP_SIZE);
+        offset += TIMESTAMP_SIZE;
+        arraycopy(B.fromLong(getUpdateTime()), 0, buff, offset, TIMESTAMP_SIZE);
+        offset += TIMESTAMP_SIZE;
+        arraycopy(B.fromLong(getPrevRecordPos()), 0, buff, offset, POINTER_SIZE);
+        offset += POINTER_SIZE;
+        arraycopy(B.fromLong(getKeyPos()), 0, buff, offset, POINTER_SIZE);
+        IO.write(getFile(), getPos(), buff, 0, buff.length);
     }
 
     /**
@@ -167,6 +179,7 @@ class RecordImpl extends Node implements Record {
         setKeyPos(B.toLong(b, offset));
     }
 
+    // </editor-fold>
     /**
      * Create a new record and write it to file. The new record will have its
      * position and creation time populated.
@@ -177,16 +190,47 @@ class RecordImpl extends Node implements Record {
      */
     public static RecordImpl create(FileChannel f, long prevRecordPos) throws IOException, DataException {
         RecordImpl rec = new RecordImpl();
-        rec.setFile(f);
-        rec.setPos(f.size());
-        rec.setPrevRecordPos(prevRecordPos);
-        rec.setCreationTime(System.currentTimeMillis() / 1000);
-        rec.write();
+        synchronized (f) {
+            rec.setFile(f);
+            rec.setPos(f.size());
+            rec.setPrevRecordPos(prevRecordPos);
+            rec.setCreationTime(System.currentTimeMillis() / 1000);
+            rec.write();
+        }
         return rec;
+    }
+    
+    /**
+     * Look for a key or create one
+     * @param k
+     * @return
+     * @throws IOException
+     * @throws DataException 
+     */
+    private Key getKey(String k) throws IOException, DataException {
+        k = k.trim().toLowerCase();
+        
+        for (Key key : keys)
+            if (key.getName().equals(k)) return key;
+        
+        Key key = Key.create(getFile(), getPos(), getKeyPos(), k);
+        setKeyPos(key.getPos());
+        writeKeyPos();
+        getFile().force(false);
+        
+        synchronized(keys) {
+            keys.add(key);
+        }
+        return key;
     }
 
     @Override
     public RecordImpl getPrevRecord() {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setString(String k, String value) throws IOException, DataException {
+        getKey(k);        
     }
 }

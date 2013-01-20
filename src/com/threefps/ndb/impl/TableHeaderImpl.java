@@ -2,8 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.threefps.ndb;
+package com.threefps.ndb.impl;
 
+import com.threefps.ndb.TableHeader;
 import static com.threefps.ndb.Const.*;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
@@ -22,15 +23,11 @@ class TableHeaderImpl implements TableHeader {
     
     private byte version = 0;
     private String name = null;
-    private FileChannel file = null;
     private long recordCount = 0;
     private long newestRecordPos = 0;
     private long keyIndexRootPos = 0;
     
     // <editor-fold desc="Getters and Setters">
-    public FileChannel getFile() {
-        return file;
-    }
 
     public long getNewestRecordPos() {
         return newestRecordPos;
@@ -60,11 +57,7 @@ class TableHeaderImpl implements TableHeader {
     }
 
     public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setFile(FileChannel file) {
-        this.file = file;
+        this.name = name.trim().toLowerCase();
     }
 
     public void setRecordCount(long recordCount) {
@@ -90,11 +83,11 @@ class TableHeaderImpl implements TableHeader {
     /**
      * Load table header from file
      */
-    public void read() throws DataException, IOException {
+    public void read(FileChannel f) throws DataException, IOException {
         // read the fixed size data
         int len = VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE + 1;        
         byte[] b = new byte[len];
-        if (IO.read(getFile(), 0, b, 0, len) != len)
+        if (IO.read(f, 0, b, 0, len) != len)
             throw new DataException("Cannot read header information");
         
         int offset = 0;
@@ -106,7 +99,7 @@ class TableHeaderImpl implements TableHeader {
         // read the table name
         byte tableNameLen = b[offset]; offset += 1;
         b = new byte[tableNameLen];
-        if (IO.read(getFile(), offset, b, 0, tableNameLen) != tableNameLen)
+        if (IO.read(f, offset, b, 0, tableNameLen) != tableNameLen)
             throw new DataException("Cannot read table name");
         setName(new String(b, 0, tableNameLen));
     }
@@ -114,12 +107,12 @@ class TableHeaderImpl implements TableHeader {
     /**
      * Write table header to file
      */
-    public void write() throws IOException {
-        writeVersion();
-        writeRecordCount();
-        writeNewestRecord();
-        writeKeyIndexRootPos();
-        writeTableName();
+    public void write(FileChannel f) throws IOException {
+        writeVersion(f);
+        writeRecordCount(f);
+        writeNewestRecord(f);
+        writeKeyIndexRootPos(f);
+        writeTableName(f);
     }
 
     /**
@@ -127,37 +120,29 @@ class TableHeaderImpl implements TableHeader {
      *
      * @throws IOException
      */
-    public void writeVersion() throws IOException {
-        IO.write(getFile(), 0, 
-                B.fromByte(getVersion()), 0, VERSION_SIZE);
+    public void writeVersion(FileChannel f) throws IOException {
+        IO.write(f, 0, B.fromByte(getVersion()), 0, VERSION_SIZE);
     }
     
-    public void writeRecordCount() throws IOException {
-        IO.write(getFile(), VERSION_SIZE, 
-                B.fromLong(getRecordCount()), 0, 8);
+    public void writeRecordCount(FileChannel f) throws IOException {
+        IO.write(f, VERSION_SIZE, B.fromLong(getRecordCount()), 0, 8);
     }
     
-    public void writeNewestRecord() throws IOException {
-        IO.write(getFile(), VERSION_SIZE + RECORD_COUNT_SIZE, 
+    public void writeNewestRecord(FileChannel f) throws IOException {
+        IO.write(
+                f, VERSION_SIZE + RECORD_COUNT_SIZE, 
                 B.fromLong(getNewestRecordPos()), 0, POINTER_SIZE);
     }
     
-    public void writeKeyIndexRootPos() throws IOException {
+    public void writeKeyIndexRootPos(FileChannel f) throws IOException {
         IO.write(
-                getFile(), VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE, 
+                f, VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE, 
                 B.fromLong(getKeyIndexRootPos()), 0, POINTER_SIZE);
     }
     
-    public void writeTableName() throws IOException {
-        byte[] b = getName().getBytes();
-        byte len = (byte)b.length;
-        // write the table name size
-        IO.write(
-                getFile(), VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE,
-                B.fromByte(len), 0, 1); 
-        // write the actual table name
-        IO.write(
-                getFile(), VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE + 1, 
-                b, 0, len);
+    public void writeTableName(FileChannel f) throws IOException {
+        byte[] buff = B.fromSmallString(getName());
+        int offset = VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE;
+        IO.write(f, offset, buff, 0, buff.length); 
     }
 }

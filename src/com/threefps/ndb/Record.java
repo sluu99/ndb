@@ -4,6 +4,9 @@
  */
 package com.threefps.ndb;
 
+import com.threefps.ndb.errors.DataException;
+import java.io.IOException;
+
 /**
  *
  * @author sluu
@@ -29,4 +32,7 @@ public interface Record {
      * @return 
      */
     public Record getPrevRecord();
+    
+    
+    public void setString(String key, String value) throws IOException, DataException;
 }

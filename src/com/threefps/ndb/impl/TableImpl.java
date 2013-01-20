@@ -2,8 +2,10 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.threefps.ndb;
+package com.threefps.ndb.impl;
 
+import com.threefps.ndb.Record;
+import com.threefps.ndb.Table;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.errors.NotFoundException;
 import java.io.File;
@@ -18,7 +20,7 @@ import java.nio.file.StandardOpenOption;
  *
  * @author sluu
  */
-class TableImpl implements Table {
+public class TableImpl implements Table {
 
     private static final byte CURRENT_VERSION = 1;
     FileChannel file = null;
@@ -63,15 +65,16 @@ class TableImpl implements Table {
         }
 
         TableImpl table = new TableImpl();
-        table.setFile(FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE));
-        table.getHeader().setFile(table.getFile());
+        FileChannel f = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
+        table.setFile(f);
+        table.getHeader();
 
         if (fileExists) {
-            table.getHeader().read();
+            table.getHeader().read(f);
         } else {
             table.getHeader().setName(name);
             table.getHeader().setVersion(TableImpl.CURRENT_VERSION);
-            table.getHeader().write();
+            table.getHeader().write(f);
             table.getFile().force(false);
         }
         return table;
@@ -95,8 +98,9 @@ class TableImpl implements Table {
         RecordImpl r = RecordImpl.create(getFile(), h.getNewestRecordPos());
         h.setNewestRecordPos(r.getPos());
         h.incCount();
-        h.writeNewestRecord();
-        h.writeRecordCount();
+        FileChannel f = getFile();
+        h.writeNewestRecord(f);
+        h.writeRecordCount(f);
         getFile().force(false);
         return r;
     }
