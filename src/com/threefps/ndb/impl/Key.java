@@ -198,7 +198,8 @@ public class Key extends Node {
      */
     private void retireValue(DataFile f) throws IOException {
         long pos = getValuePos();
-        f.write(getValuePos() + POINTER_SIZE, B.fromByte((byte) 0), 0, 1);
+        if (pos != 0)
+            f.write(getValuePos() + POINTER_SIZE, B.fromByte((byte) 0), 0, 1);
     }
 
     /**

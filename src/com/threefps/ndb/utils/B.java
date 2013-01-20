@@ -41,7 +41,7 @@ public class B {
      * @return 
      */
     public static byte[] fromInt(int i) {
-        ByteBuffer buff = ByteBuffer.allocate(i);
+        ByteBuffer buff = ByteBuffer.allocate(4);
         buff.putInt(i);
         return buff.array();
     }

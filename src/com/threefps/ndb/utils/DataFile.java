@@ -84,7 +84,7 @@ public class DataFile {
             while (buff.hasRemaining())
                 f.write(buff);
         } finally {
-            if (lock != null) lock.release();;
+            if (lock != null) lock.release();
         }
     }
     
