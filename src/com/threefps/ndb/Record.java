@@ -43,4 +43,5 @@ public interface Record {
     public void setBoolean(String key, boolean value) throws IOException, DataException;    
     public void setString(String key, String value) throws IOException, DataException;
     public void setBigString(String key, String value) throws IOException, DataException;
+    public void setBin(String key, byte[] value) throws IOException, DataException;
 }

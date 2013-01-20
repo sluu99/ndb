@@ -216,11 +216,11 @@ public class Value extends Node {
             if (f.read(pos + offset, buff, 0, len) != len)
                 throw new DataException("Cannot read string value");
             
-        } else if(t == DataType.BIG_STRING) {
+        } else if(t == DataType.BIG_STRING || t == DataType.BINARY) {
             int len = B.toInt(buff, 4);
             buff = new byte[len];
             if (f.read(pos + offset, buff, 0, len) != len)
-                throw new DataException("Cannot read big string value");
+                throw new DataException("Cannot read big string value or binary");
         }
         
         v.setRaw(buff);

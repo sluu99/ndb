@@ -117,6 +117,19 @@ public class B {
     }
     
     /**
+     * Create a byte array from another byte array.
+     * The first four bytes will be length of the original data.
+     * @param b
+     * @return 
+     */
+    public static byte[] fromBin(byte[] src) {
+        byte[] b = new byte[src.length + 4];
+        arraycopy(fromInt(src.length), 0, b, 0, 4);
+        arraycopy(src, 0, b, 4, src.length);
+        return b;
+    }
+    
+    /**
      * Get an int out of a byte array
      * @param b
      * @param offset

@@ -18,7 +18,8 @@ public enum DataType {
     DOUBLE,
     BOOL,
     STRING,
-    BIG_STRING;
+    BIG_STRING,
+    BINARY;
     
     /**
      * Get a data type from its byte representation
@@ -36,6 +37,7 @@ public enum DataType {
             case 7: return BOOL;
             case 8: return STRING;
             case 9: return BIG_STRING;
+            case 10: return BINARY;
         }
         return NONE;
     }
@@ -55,6 +57,7 @@ public enum DataType {
             case BOOL: return 7;
             case STRING: return 8;
             case BIG_STRING: return 9;
+            case BINARY: return 10;
         }
         return 0;
     }
@@ -74,6 +77,7 @@ public enum DataType {
             case BOOL: return 1;   
             case STRING: return 1;
             case BIG_STRING: return 4;
+            case BINARY: return 4;
         }
         return 0;
     }
@@ -90,12 +94,14 @@ public enum DataType {
             case LONG:
             case FLOAT:
             case DOUBLE:
-                return 1;            
+                return 10;            
             case BOOL:
-                return 2;
+                return 20;
             case STRING:
             case BIG_STRING:
-                return 3;
+                return 30;
+            case BINARY:
+                return 40;
         }
         return 0;
     }

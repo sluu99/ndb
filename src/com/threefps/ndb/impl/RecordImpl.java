@@ -291,6 +291,8 @@ public class RecordImpl extends Node implements Record {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    // <editor-fold desc="Value setters">
+    
     @Override
     public void setByte(String key, byte value) throws IOException, DataException {
         writeValue(key, DataType.BYTE, B.fromByte(value));
@@ -335,4 +337,11 @@ public class RecordImpl extends Node implements Record {
     public void setBigString(String key, String value) throws IOException, DataException {
         writeValue(key, DataType.BIG_STRING, B.fromBigString(value));
     }
+    
+    @Override
+    public void setBin(String key, byte[] value) throws IOException, DataException {
+        writeValue(key, DataType.BINARY, B.fromBin(value));
+    }
+    
+    // </editor-fold>
 }
