@@ -227,6 +227,18 @@ public class ValueImpl extends Node implements Value {
         }
     }
 
+    
+    /**
+     * Get the previous version of this value
+     * @return 
+     */
+    public ValueImpl previous(DataFile f) throws DataException, IOException {
+        if (getPrevVersionPos() == 0) return null;
+        else return ValueImpl.read(f, getPrevVersionPos());
+    }
+    
+    
+
     /**
      * Make sure that the current value is of certain types or throw
      * a DataException

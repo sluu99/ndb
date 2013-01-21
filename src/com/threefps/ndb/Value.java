@@ -12,8 +12,23 @@ import com.threefps.ndb.errors.DataException;
  */
 public interface Value {
     
+    /**
+     * Get the timestamp of this value
+     * @return 
+     */
     public long getTimestamp();
+    
+    /**
+     * Get the data type of this value
+     * @return 
+     */
     public DataType getType();
+    
+    /**
+     * The raw data for this value
+     * @return 
+     */
+    public byte[] raw();
     
     public byte asByte() throws DataException;
     public short asShort() throws DataException;
@@ -24,6 +39,4 @@ public interface Value {
     public boolean asBool() throws DataException;    
     public String asString() throws DataException;
     public byte[] asBin() throws DataException;
-    
-    public byte[] raw();
 }

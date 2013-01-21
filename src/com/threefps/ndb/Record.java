@@ -33,6 +33,15 @@ public interface Record {
      */
     public Record getPrevRecord() throws IOException, DataException;
     
+    /**
+     * Get the last n versions for the value of this key
+     * @param n
+     * @return
+     * @throws IOException
+     * @throws DataException 
+     */
+    public Value[] getValues(String key, int n) throws IOException, DataException;
+    
     
     public void setByte(String key, byte value) throws IOException, DataException;
     public void setShort(String key, short value) throws IOException, DataException;

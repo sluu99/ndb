@@ -7,6 +7,7 @@ package com.threefps.ndb.impl;
 import static com.threefps.ndb.Const.*;
 import com.threefps.ndb.DataType;
 import com.threefps.ndb.Record;
+import com.threefps.ndb.Value;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
 import java.io.IOException;
@@ -327,6 +328,17 @@ public class RecordImpl extends Node implements Record {
 
     // </editor-fold>
     // <editor-fold desc="Value getters">
+
+    @Override
+    public Value[] getValues(String k, int n) throws IOException, DataException {
+        Key key = getKey(k, false);
+        if (key == null) {
+            throw new DataException(String.format("Cannot find key '%s'", k));
+        }
+        return key.getValues(getFile(), n);
+    }
+    
+    
     
     /**
      * Get value of a key

@@ -10,6 +10,7 @@ import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
 import java.io.IOException;
 import static java.lang.System.arraycopy;
+import java.util.ArrayList;
 
 /**
  *
@@ -213,5 +214,27 @@ public class Key extends Node {
             value = ValueImpl.read(f, getValuePos());
         }
         return value;
+    }
+    
+    /**
+     * Get the previous n values for this key
+     * @param f
+     * @param n
+     * @return
+     * @throws DataException
+     * @throws IOException 
+     */
+    public ValueImpl[] getValues(DataFile f, int n) throws DataException, IOException {
+        ValueImpl v = getValue(f);
+        if (v == null) return new ValueImpl[0];
+        ArrayList<ValueImpl> values = new ArrayList<>(n);
+        do {
+            values.add(v);
+            v = v.previous(f);
+        } while (v != null);
+        
+        ValueImpl[] arr = new ValueImpl[values.size()];
+        values.toArray(arr);
+        return arr;
     }
 }
