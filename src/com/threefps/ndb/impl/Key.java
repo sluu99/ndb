@@ -4,11 +4,10 @@
  */
 package com.threefps.ndb.impl;
 
-import com.threefps.ndb.DataType;
 import static com.threefps.ndb.Const.*;
+import com.threefps.ndb.DataType;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
-import com.threefps.ndb.utils.DataFile;
 import java.io.IOException;
 import static java.lang.System.arraycopy;
 
@@ -32,15 +31,12 @@ public class Key extends Node {
      * @param name
      * @return
      */
-    public static Key create(DataFile f, long recordPos, long nextPos, String name) throws IOException {
+    public static Key create(DataFile f, long recordPos, long nextPos, String name) throws IOException, DataException {
         Key k = new Key();
-        synchronized (f) {
-            k.setPos(f.getChannel().size());
-            k.setRecordPos(recordPos);
-            k.setNextPos(nextPos);
-            k.setName(name);
-            k.write(f);
-        }
+        k.setRecordPos(recordPos);
+        k.setNextPos(nextPos);
+        k.setName(name);
+        k.create(f);
         return k;
     }
 
@@ -64,9 +60,7 @@ public class Key extends Node {
         // read the key over head
         int size = POINTER_SIZE * 3 + 1;
         byte[] buff = new byte[size];
-        if (f.read(pos, buff, 0, size) != size) {
-            throw new DataException("Error reading record key");
-        }
+        f.read(pos, buff, 0, size);
         int offset = 0;
         key.setRecordPos(B.toLong(buff, offset));
         offset += POINTER_SIZE;
@@ -79,9 +73,7 @@ public class Key extends Node {
         size = buff[offset];
         offset++;
         buff = new byte[size];
-        if (f.read(pos + offset, buff, 0, size) != size) {
-            throw new DataException("Error reading key name");
-        }
+        f.read(pos + offset, buff, 0, size) ;
         key.setName(new String(buff, 0, size));
 
         return key;
@@ -161,9 +153,9 @@ public class Key extends Node {
     }
 
     /**
-     * Write the key to file
+     * Write the new key to file
      */
-    public void write(DataFile f) throws IOException {
+    public void create(DataFile f) throws IOException, DataException {
         byte[] nameBuff = B.fromString(getName());
         byte[] buff = new byte[POINTER_SIZE * 3 + nameBuff.length];
         int offset = 0;
@@ -174,7 +166,7 @@ public class Key extends Node {
         arraycopy(B.fromLong(getValuePos()), 0, buff, offset, POINTER_SIZE);
         offset += POINTER_SIZE;
         arraycopy(nameBuff, 0, buff, offset, nameBuff.length);
-        f.write(getPos(), buff, 0, buff.length);
+        setPos(f.append(buff, 0, buff.length));
     }
 
     /**
@@ -185,7 +177,7 @@ public class Key extends Node {
      * @param val
      * @throws IOException
      */
-    public void writeValue(DataFile f, DataType type, byte[] val) throws IOException {
+    public void writeValue(DataFile f, DataType type, byte[] val) throws IOException, DataException {
         Value v = Value.create(f, getRecordPos(), getValuePos(), type, val);
         retireValue(f);
         setValuePos(v.getPos());

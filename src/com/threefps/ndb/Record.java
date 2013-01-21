@@ -31,7 +31,7 @@ public interface Record {
      * Get the previous record in the same table
      * @return 
      */
-    public Record getPrevRecord();
+    public Record getPrevRecord() throws IOException, DataException;
     
     
     public void setByte(String key, byte value) throws IOException, DataException;

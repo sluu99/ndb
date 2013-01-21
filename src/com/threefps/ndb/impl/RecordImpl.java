@@ -9,7 +9,6 @@ import com.threefps.ndb.DataType;
 import com.threefps.ndb.Record;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
-import com.threefps.ndb.utils.DataFile;
 import java.io.IOException;
 import static java.lang.System.arraycopy;
 import java.util.ArrayList;
@@ -36,15 +35,11 @@ public class RecordImpl extends Node implements Record {
      * @return
      */
     public static RecordImpl create(TableImpl t, long prevRecordPos) throws IOException, DataException {
-        RecordImpl rec = new RecordImpl();
-        DataFile f = t.getFile();
-        synchronized (f) {
-            rec.setTable(t);
-            rec.setPos(f.getChannel().size());
-            rec.setPrevRecordPos(prevRecordPos);
-            rec.setCreationTime(System.currentTimeMillis() / 1000);
-            rec.write();
-        }
+        RecordImpl rec = new RecordImpl();        
+        rec.setTable(t);
+        rec.setPrevRecordPos(prevRecordPos);
+        rec.setCreationTime(System.currentTimeMillis() / 1000);
+        rec.create();
         return rec;
     }
 
@@ -64,9 +59,8 @@ public class RecordImpl extends Node implements Record {
         
         int size = TIMESTAMP_SIZE + TIMESTAMP_SIZE + POINTER_SIZE + POINTER_SIZE;
         byte[] b = new byte[size];
-        if (t.getFile().read(pos, b, 0, size) != size) {
-            throw new DataException("Cannot read #" + pos + " record from file");
-        }
+        t.getFile().read(pos, b, 0, size);
+        
         RecordImpl rec = new RecordImpl();
         rec.setTable(t);
         rec.setPos(pos);
@@ -138,16 +132,6 @@ public class RecordImpl extends Node implements Record {
 
     // </editor-fold>
     // <editor-fold desc="Read & Write">
-    /**
-     * Check the position before writing
-     *
-     * @throws DataException
-     */
-    private void checkPos() throws DataException {
-        if (getPos() <= 0) {
-            throw new DataException("Cannot write record at position zero");
-        }
-    }
 
     /**
      * Write the creation timestamp to file
@@ -156,7 +140,6 @@ public class RecordImpl extends Node implements Record {
      * @throws DataException when record has position zero
      */
     public void writeCreationTime() throws IOException, DataException {
-        checkPos();
         getFile().write(getPos(), B.fromLong(getCreationTime()), 0, TIMESTAMP_SIZE);
     }
 
@@ -167,7 +150,6 @@ public class RecordImpl extends Node implements Record {
      * @throws IOException
      */
     public void writeUpdateTime() throws DataException, IOException {
-        checkPos();
         getFile().write(
                 getPos() + TIMESTAMP_SIZE,
                 B.fromLong(getUpdateTime()), 0, TIMESTAMP_SIZE);
@@ -177,7 +159,6 @@ public class RecordImpl extends Node implements Record {
      * Write previous record
      */
     public void writePrevRecordPos() throws DataException, IOException {
-        checkPos();
         getFile().write(
                 getPos() + TIMESTAMP_SIZE + TIMESTAMP_SIZE,
                 B.fromLong(getPrevRecordPos()), 0, POINTER_SIZE);
@@ -190,7 +171,6 @@ public class RecordImpl extends Node implements Record {
      * @throws IOException
      */
     public void writeKeyPos() throws DataException, IOException {
-        checkPos();
         getFile().write(
                 getPos() + TIMESTAMP_SIZE + TIMESTAMP_SIZE + POINTER_SIZE,
                 B.fromLong(getKeyPos()), 0, POINTER_SIZE);
@@ -202,8 +182,7 @@ public class RecordImpl extends Node implements Record {
      * @throws IOException
      * @throws DataException
      */
-    public void write() throws IOException, DataException {
-        checkPos();
+    private void create() throws IOException, DataException {        
         byte[] buff = new byte[TIMESTAMP_SIZE * 2 + POINTER_SIZE * 2];
         int offset = 0;
         arraycopy(B.fromLong(getCreationTime()), 0, buff, offset, TIMESTAMP_SIZE);
@@ -213,7 +192,7 @@ public class RecordImpl extends Node implements Record {
         arraycopy(B.fromLong(getPrevRecordPos()), 0, buff, offset, POINTER_SIZE);
         offset += POINTER_SIZE;
         arraycopy(B.fromLong(getKeyPos()), 0, buff, offset, POINTER_SIZE);
-        getFile().write(getPos(), buff, 0, buff.length);
+        setPos(getFile().append(buff, 0, buff.length));
     }
 
     /**
@@ -290,8 +269,9 @@ public class RecordImpl extends Node implements Record {
     }
     
     @Override
-    public RecordImpl getPrevRecord() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public RecordImpl getPrevRecord() throws IOException, DataException {
+        if (getPrevRecordPos() == 0) return null;
+        else return RecordImpl.read(getTable(), getPrevRecordPos());
     }
 
     /**

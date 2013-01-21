@@ -4,11 +4,10 @@
  */
 package com.threefps.ndb.impl;
 
-import com.threefps.ndb.DataType;
 import static com.threefps.ndb.Const.*;
+import com.threefps.ndb.DataType;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
-import com.threefps.ndb.utils.DataFile;
 import java.io.IOException;
 import static java.lang.System.arraycopy;
 
@@ -112,7 +111,7 @@ public class Value extends Node {
      * @param f
      * @throws IOException
      */
-    private void write(DataFile f) throws IOException {
+    private void create(DataFile f) throws IOException, DataException {
         byte[] data = getRaw();
         int size = POINTER_SIZE * 5 + 2 + TIMESTAMP_SIZE + data.length;
         byte[] buff = new byte[size];
@@ -134,7 +133,7 @@ public class Value extends Node {
         buff[offset] = getType().toByte();
         offset += 1;
         arraycopy(data, 0, buff, offset, data.length);
-        f.write(getPos(), buff, 0, buff.length);
+        setPos(f.append(buff, 0, buff.length));
     }
 
     /**
@@ -146,17 +145,16 @@ public class Value extends Node {
      * @param data
      * @return
      */
-    public static Value create(DataFile f, long recordPos, long prevVersionPos, DataType type, byte[] data) throws IOException {
+    public static Value create(DataFile f, long recordPos, long prevVersionPos, DataType type, byte[] data) throws IOException, DataException {
         Value v = new Value();
         synchronized (f) {
-            v.setPos(f.getChannel().size());
             v.setRecordPos(recordPos);
             v.setFlag((byte) 1);
             v.setTimestamp(System.currentTimeMillis() / 1000);
             v.setPrevVersionPos(prevVersionPos);
             v.setType(type);
             v.setRaw(data);
-            v.write(f);
+            v.create(f);
         }
         return v;
     }
@@ -176,9 +174,7 @@ public class Value extends Node {
 
         int size = POINTER_SIZE * 5 + 2 + TIMESTAMP_SIZE;
         byte[] buff = new byte[size];
-        if (f.read(pos, buff, 0, size) != size) {
-            throw new DataException("Cannot read value header for record #" + pos);
-        }
+        f.read(pos, buff, 0, size);
 
         Value v = new Value();
         int offset = 0;
@@ -204,23 +200,19 @@ public class Value extends Node {
         DataType t = v.getType();
         size = t.size();
         buff = new byte[size];
-        if (f.read(pos + offset, buff, 0, size) != size) {
-            throw new DataException("Cannot read value data for record #" + pos);
-        }
+        f.read(pos + offset, buff, 0, size);
         offset += size;
 
         // if the type is string, we have only read the string length
         if (t == DataType.STRING) {            
             byte len = buff[0];
             buff = new byte[len];
-            if (f.read(pos + offset, buff, 0, len) != len)
-                throw new DataException("Cannot read string value for record #" + pos);
+            f.read(pos + offset, buff, 0, len);
             
         } else if(t == DataType.BIG_STRING || t == DataType.BINARY) {
             int len = B.toInt(buff, 4);
             buff = new byte[len];
-            if (f.read(pos + offset, buff, 0, len) != len)
-                throw new DataException("Cannot read big string value or binary for record #" + pos);
+            f.read(pos + offset, buff, 0, len);
         }
         
         v.setRaw(buff);

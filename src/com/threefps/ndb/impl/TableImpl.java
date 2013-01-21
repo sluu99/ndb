@@ -7,13 +7,11 @@ package com.threefps.ndb.impl;
 import com.threefps.ndb.Record;
 import com.threefps.ndb.Table;
 import com.threefps.ndb.errors.DataException;
-import com.threefps.ndb.utils.DataFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 
 /**
  * Implementation of the Table interface
@@ -65,8 +63,7 @@ public class TableImpl implements Table {
         }
 
         TableImpl table = new TableImpl();
-        FileChannel channel = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
-        DataFile f = new DataFile(channel);
+        DataFile f = new DataFile(path);
         table.setFile(f);
         table.getHeader();
 
@@ -75,7 +72,7 @@ public class TableImpl implements Table {
         } else {
             table.getHeader().setName(name);
             table.getHeader().setVersion(TableImpl.CURRENT_VERSION);
-            table.getHeader().write(f);
+            table.getHeader().create(f);
         }
         return table;
     }
@@ -85,11 +82,7 @@ public class TableImpl implements Table {
      */
     @Override
     public void close() throws IOException {
-        FileChannel f = getFile().getChannel();
-        if (f != null && f.isOpen()) {
-            f.force(true);
-            f.close();
-        }
+        if (getFile() != null) getFile().close();;
     }
 
     @Override

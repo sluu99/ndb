@@ -8,8 +8,8 @@ import static com.threefps.ndb.Const.*;
 import com.threefps.ndb.TableHeader;
 import com.threefps.ndb.errors.DataException;
 import com.threefps.ndb.utils.B;
-import com.threefps.ndb.utils.DataFile;
 import java.io.IOException;
+import static java.lang.System.arraycopy;
 
 /**
  * Implementation of the table header
@@ -86,8 +86,7 @@ public class TableHeaderImpl implements TableHeader {
         // read the fixed size data
         int len = VERSION_SIZE + RECORD_COUNT_SIZE + POINTER_SIZE + POINTER_SIZE + 1;        
         byte[] b = new byte[len];
-        if (f.read(0, b, 0, len) != len)
-            throw new DataException("Cannot read table header information");
+        f.read(0, b, 0, len);
         
         int offset = 0;
         setVersion(b[0]); offset += VERSION_SIZE;
@@ -98,20 +97,29 @@ public class TableHeaderImpl implements TableHeader {
         // read the table name
         byte tableNameLen = b[offset]; offset += 1;
         b = new byte[tableNameLen];
-        if (f.read(offset, b, 0, tableNameLen) != tableNameLen)
-            throw new DataException("Cannot read table name");
+        f.read(offset, b, 0, tableNameLen);
         setName(new String(b, 0, tableNameLen));
     }
     
     /**
      * Write table header to file
      */
-    public void write(DataFile f) throws IOException {
-        writeVersion(f);
-        writeRecordCount(f);
-        writeNewestRecord(f);
-        writeKeyIndexRootPos(f);
-        writeTableName(f);
+    public void create(DataFile f) throws IOException, DataException {
+        byte[] nameBuff = B.fromString(getName());
+        int size = VERSION_SIZE + 8 + POINTER_SIZE * 2 + nameBuff.length;
+        byte[] buff = new byte[size];
+        
+        int offset = 0;
+        buff[offset] = getVersion(); 
+        offset += VERSION_SIZE;
+        arraycopy(B.fromLong(getRecordCount()), 0, buff, offset, 8); 
+        offset += 8;
+        arraycopy(B.fromLong(getNewestRecordPos()), 0, buff, offset, POINTER_SIZE); 
+        offset += POINTER_SIZE;
+        arraycopy(B.fromLong(getKeyIndexRootPos()), 0, buff, offset, POINTER_SIZE); 
+        offset += POINTER_SIZE;
+        arraycopy(nameBuff, 0, buff, offset, nameBuff.length);
+        f.append(buff, 0, buff.length);
     }
 
     /**

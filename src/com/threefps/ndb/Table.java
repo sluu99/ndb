@@ -5,13 +5,14 @@
 package com.threefps.ndb;
 
 import com.threefps.ndb.errors.DataException;
+import java.io.Closeable;
 import java.io.IOException;
 
 /**
  * It's an interface for a data table.
  * @author sluu
  */
-public interface Table {
+public interface Table extends Closeable {
     
     /**
      * Get this header information of this table
@@ -40,8 +41,4 @@ public interface Table {
      */
     public Record getLastRecord() throws IOException, DataException;
     
-    /**
-     * Close the table and all the files associated with it
-     */
-    public void close() throws IOException;
 }
