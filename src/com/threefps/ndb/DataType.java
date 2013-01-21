@@ -9,16 +9,49 @@ package com.threefps.ndb;
  * @author sluu
  */
 public enum DataType {
+    /**
+     * Does not represent any data type
+     */
     NONE,
+    /**
+     * 8 bit number
+     */
     BYTE,
+    /**
+     * 16 bite number
+     */
     SHORT,
+    /**
+     * 32 bit integer
+     */
     INT,
+    /**
+     * 64 bit integer
+     */
     LONG,
+    /**
+     * 32 bit float
+     */
     FLOAT,
+    /**
+     * 64 bit double
+     */
     DOUBLE,
+    /**
+     * Boolean
+     */
     BOOL,
+    /**
+     * String with length less than 128
+     */
     STRING,
+    /**
+     * String with length > 128 or more
+     */
     BIG_STRING,
+    /**
+     * Just raw binary
+     */
     BINARY;
     
     /**
@@ -46,19 +79,18 @@ public enum DataType {
      * Get byte representation of the data type
      * @return 
      */
-    public byte toByte() {
-        switch (this) {
-            case BYTE: return 1;
-            case SHORT: return 2;
-            case INT: return 3;
-            case LONG: return 4;
-            case FLOAT: return 5;
-            case DOUBLE: return 6;
-            case BOOL: return 7;
-            case STRING: return 8;
-            case BIG_STRING: return 9;
-            case BINARY: return 10;
-        }
+    public byte toByte() {        
+        if (this == BYTE) return 1;
+        if (this == SHORT) return 2;
+        if (this == INT) return 3;
+        if (this == LONG) return 4;
+        if (this == FLOAT) return 5;
+        if (this == DOUBLE) return 6;
+        if (this == BOOL) return 7;
+        if (this == STRING) return 8;
+        if (this == BIG_STRING) return 9;
+        if (this == BINARY) return 10;
+        
         return 0;
     }
     
@@ -67,18 +99,18 @@ public enum DataType {
      * @return 
      */
     public int size() {
-        switch (this) {
-            case BYTE: return 1;
-            case SHORT: return 2;
-            case INT: return 4;
-            case LONG: return 8;
-            case FLOAT: return 4;
-            case DOUBLE: return 8;
-            case BOOL: return 1;   
-            case STRING: return 1;
-            case BIG_STRING: return 4;
-            case BINARY: return 4;
-        }
+        
+        if (this == BYTE) return 1;
+        if (this == SHORT) return 2;
+        if (this == INT) return 4;
+        if (this == LONG) return 8;
+        if (this == FLOAT) return 4;
+        if (this == DOUBLE) return 8;
+        if (this == BOOL) return 1;   
+        if (this == STRING) return 1;
+        if (this == BIG_STRING) return 4;
+        if (this == BINARY) return 4;
+        
         return 0;
     }
     
@@ -87,22 +119,9 @@ public enum DataType {
      * @return 
      */
     public int rank() {
-        switch (this) {
-            case BYTE:
-            case SHORT:
-            case INT:
-            case LONG:
-            case FLOAT:
-            case DOUBLE:
-                return 10;            
-            case BOOL:
-                return 20;
-            case STRING:
-            case BIG_STRING:
-                return 30;
-            case BINARY:
-                return 40;
-        }
-        return 0;
+        if (this == BOOL) return 20;
+        if (this == STRING || this == BIG_STRING) return 30;
+        if (this == BINARY) return 40;
+        return 10;
     }
 }

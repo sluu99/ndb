@@ -4,14 +4,10 @@
  */
 package com.threefps.ndb.impl;
 
-import java.nio.channels.FileChannel;
-
 /**
  * Represent a key index
  * @author sluu
  */
 class KeyIndexTree {
     
-    FileChannel file = null;
-    KeyIndexNode root = null;
 }

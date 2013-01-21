@@ -4,6 +4,8 @@
  */
 package com.threefps.ndb;
 
+import java.nio.charset.Charset;
+
 /**
  * Constants
  * @author sluu
@@ -23,5 +25,10 @@ public class Const {
     /**
      * Size of timestamp
      */
-    public static final int TIMESTAMP_SIZE = 8;;
+    public static final int TIMESTAMP_SIZE = 8;
+    
+    /**
+     * UTF-8 charset
+     */
+    public static final Charset CHARSET = Charset.forName("UTF-8");
 }

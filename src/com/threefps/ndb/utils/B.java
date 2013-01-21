@@ -4,6 +4,7 @@
  */
 package com.threefps.ndb.utils;
 
+import com.threefps.ndb.Const;
 import static java.lang.System.arraycopy;
 import java.nio.ByteBuffer;
 
@@ -11,7 +12,7 @@ import java.nio.ByteBuffer;
  * A class that convert things to and from byte arrays
  * @author sluu
  */
-public class B {
+public final class B {
     
     /**
      * Convert a byte to a byte array
@@ -94,7 +95,7 @@ public class B {
      * @return A byte array. The first byte is the length. The rest is the string
      */
     public static byte[] fromString(String s) {
-        byte[] sBytes = s.getBytes();
+        byte[] sBytes = s.getBytes(Const.CHARSET);
         byte len = (byte)sBytes.length;
         byte[] b = new byte[len+1];
         arraycopy(sBytes, 0, b, 1, len);
@@ -108,7 +109,7 @@ public class B {
      * @return A byte array. The first byte is the length. The rest is the string
      */
     public static byte[] fromBigString(String s) {
-        byte[] sBytes = s.getBytes();
+        byte[] sBytes = s.getBytes(Const.CHARSET);
         int len = sBytes.length;
         byte[] b = new byte[len+4];
         arraycopy(sBytes, 0, b, 4, len);
@@ -119,7 +120,7 @@ public class B {
     /**
      * Create a byte array from another byte array.
      * The first four bytes will be length of the original data.
-     * @param b
+     * @param src
      * @return 
      */
     public static byte[] fromBin(byte[] src) {

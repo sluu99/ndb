@@ -7,7 +7,6 @@ package com.threefps.ndb.impl;
 import com.threefps.ndb.errors.DataException;
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -23,41 +22,66 @@ import java.util.ArrayList;
  */
 public class DataFile implements Closeable {
 
-    // constants
-    public static final int PAGE_SIZE = 1024 * 1024 * 4; // 4 megabytes
-    private static final int HEADER_SIZE = 1024; // 1024 bytes for header size
-    private static final int APPEND_FLAG_POS = 4; // where is "append-position stored in the file"
-    
+    /**
+     * Page size (4 megabytes)
+     */
+    public static final int PAGE_SIZE = 1024 * 1024 * 4;
+    /**
+     * Header size (1024 bytes)
+     */
+    private static final int HEADER_SIZE = 1024;
+    /**
+     * The header reserves 8 bytes to indicate where new data should be appended.
+     * This is the location of those 8 bytes in the header.
+     */
+    private static final int APPEND_FLAG_POS = 4;
+
     /**
      * Calculates page number from position
-     * @param pos
-     * @return 
+     *
+     * @param pos The absolute position (does not include file header offset)
+     * @return The zero-based page number
      */
-    private static final int page(long pos) {
+    private static int page(long pos) {
         return (int) (pos / PAGE_SIZE);
     }
-    
+
     /**
      * Calculate the position relative to a page
-     * @param pos
-     * @return 
+     *
+     * @param pos The absolute position (does not include file header offset)
+     * @return The position in relative to a page
      */
-    private static final int ppos(long pos) {
+    private static int ppos(long pos) {
         return (int) (pos % PAGE_SIZE);
     }
     
-    // private fields
+    /**
+     * The file channel
+     */
     private FileChannel ch = null;
+    /**
+     * Buffer pages
+     */
     private final ArrayList<MappedByteBuffer> pages = new ArrayList<>();
+    /**
+     * Header page
+     */
     MappedByteBuffer headerPage = null;
-    private long bytesMapped = 0; // number of bytes mapped (does not include header page)
-    private long appendAt = 0; // the position for appending new data
-    
+    /**
+     * number of bytes mapped (does not include header size)
+     */
+    private long bytesMapped = 0;
+    /**
+     * the position for appending new data
+     */
+    private long appendAt = 0;
 
     /**
      * Open a file in READ and WRITE mode at that path
      *
-     * @param path
+     * @param path Path of the file
+     * @throws IOException If an I/O error occurred
      */
     public DataFile(Path path) throws IOException {
         ch = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
@@ -67,6 +91,8 @@ public class DataFile implements Closeable {
 
     /**
      * Map the file into memory pages
+     *
+     * @throws IOException If an I/O error occurred
      */
     private void map() throws IOException {
         headerPage = ch.map(FileChannel.MapMode.READ_WRITE, 0, HEADER_SIZE);
@@ -79,10 +105,11 @@ public class DataFile implements Closeable {
             } while (bytesMapped <= size);
         }
     }
-    
+
     /**
      * Map the next page in the file (can potentially grow file).
-     * @throws IOException 
+     *
+     * @throws IOException If an I/O error occurred
      */
     private void mapNextPage() throws IOException {
         synchronized (pages) {
@@ -90,12 +117,12 @@ public class DataFile implements Closeable {
             bytesMapped += PAGE_SIZE;
         }
     }
-    
+
     /**
      * Read this file's header information
      */
     private void readHeader() {
-        
+
         // the eight bytes from 4 to 11 indicates the next pre-position (position before head offset)
         // for appending new data
         appendAt = headerPage.getLong(APPEND_FLAG_POS);
@@ -111,21 +138,24 @@ public class DataFile implements Closeable {
      * @param length Number of bytes intended to read
      * @return Number of bytes read
      */
-    public void read(long pos, byte[] dst, int offset, int length) {        
+    public void read(long pos, byte[] dst, int offset, int length) {
         MappedByteBuffer p = pages.get(page(pos));
         p.position(ppos(pos));
         p.get(dst, offset, length);
     }
 
     /**
-     * Write to the buffer. force() is NOT called
+     * Write to the buffer.
      *
-     * @param pos Write to this position.
-     * position
-     * @param b
+     * @param pos Position of the file to write to. (This is the position before
+     * calculating the file header offset.
+     * @param src The data to be written
+     * @param offset Position of the first byte to be written from 'src'
+     * @param length Number of bytes to be written
+     * @throws IOException If some I/O error occurred
      */
     public void write(long pos, byte[] src, int offset, int length) throws IOException {
-                
+
         FileLock lock = null;
         try {
             lock = ch.lock(pos, length, false);
@@ -138,56 +168,59 @@ public class DataFile implements Closeable {
             }
         }
     }
-    
+
     /**
-     * Append new data to the file
-     * @param src
-     * @param offset
-     * @param length length must not exceed PAGE_SIZE
-     * @throws DataException
-     * @throws IOException 
+     * Append new data to the file. Certain part of the file will be locked in
+     * order to make sure no other thread is appending data to the same
+     * location.
+     *
+     * @param b The binary data to be appended
+     * @param offset The position to start reading data from the byte array
+     * @param length Number of bytes to write, must not exceed PAGE_SIZE
+     * @return Location of the file where data was appended to
+     * @throws DataException If length is greater than PAGE_SIZE
+     * @throws IOException If an I/O error occurred
      */
-    public long append(byte[] src, int offset, int length) throws DataException, IOException {
-        if (length > PAGE_SIZE)
-            throw new DataException("length must not be larger than PAGE_SIZE (" + PAGE_SIZE + ")");
-        
+    public long append(byte[] b, int offset, int length) throws DataException, IOException {
+        if (length > PAGE_SIZE) {
+            throw new DataException("length must not be greater than PAGE_SIZE (" + PAGE_SIZE + ")");
+        }
+
         FileLock lock = null;
         try {
             lock = ch.lock(APPEND_FLAG_POS, 8, false); // make sure nobody else is appending data
-            
+
             if ((appendAt + length) > bytesMapped) {
                 // the data does not fit into current page
-                mapNextPage(); // create a new page
-                appendAt = (pages.size() - 1) * PAGE_SIZE; // start writing at the begining of next page
+                // create a new pagel
+                mapNextPage();
+                // start writing at the begining of next page
+                appendAt = ((long) pages.size() - 1L) * (long) PAGE_SIZE;
             }
-            
+
             MappedByteBuffer p = pages.get(page(appendAt));
             p.position(ppos(appendAt));
-            p.put(src, offset, length);
-            
+            p.put(b, offset, length); // ignore the ByteBuffer that returns
+
             // update position
             appendAt += length;
             headerPage.putLong(APPEND_FLAG_POS, appendAt); // update append at flag
-            
+
         } finally {
-            if (lock != null) lock.release();
+            if (lock != null) {
+                lock.release();
+            }
         }
-        
+
         return (appendAt - length);
     }
 
     /**
-     * Write n zero bytes to the channel
+     * Close the data file and the channel associated with it. It also hints the
+     * channel to flush the bufferred data.
      *
-     * @param pos Write to this position. Specify -1 to indicate the current
-     * position
-     * @param n
-     * @throws IOException
+     * @throws IOException If an I/O error occurred
      */
-    public void writeZeros(long pos, int n) throws IOException {
-        write(pos, new byte[n], 0, n);
-    }
-
     @Override
     public void close() throws IOException {
         if (ch != null && ch.isOpen()) {

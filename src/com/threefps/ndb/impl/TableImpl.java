@@ -9,9 +9,9 @@ import com.threefps.ndb.Table;
 import com.threefps.ndb.errors.DataException;
 import java.io.File;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.Locale;
 
 /**
  * Implementation of the Table interface
@@ -37,10 +37,6 @@ public class TableImpl implements Table {
     public TableHeaderImpl getHeader() {
         return header;
     }
-
-    private void setHeader(TableHeaderImpl header) {
-        this.header = header;
-    }
     // </editor-fold>
 
     /**
@@ -50,16 +46,20 @@ public class TableImpl implements Table {
      * @param dir
      * @param create
      * @return
+     * @throws IOException If an error occurred when creating the data file or other I/O errors
+     * @throws DataException
      */
     public static TableImpl open(String name, String dir) throws IOException, DataException {
-        name = name.trim().toLowerCase();
+        name = name.trim().toLowerCase(Locale.getDefault());
 
         Path path = FileSystems.getDefault().getPath(dir, name + ".tbl");
 
         File file = path.toFile();
         boolean fileExists = file.exists();
         if (!fileExists) {
-            file.createNewFile();
+            if (!file.createNewFile()) {
+                throw new IOException("Unable to create data file");
+            }
         }
 
         TableImpl table = new TableImpl();
@@ -82,7 +82,7 @@ public class TableImpl implements Table {
      */
     @Override
     public void close() throws IOException {
-        if (getFile() != null) getFile().close();;
+        if (getFile() != null) getFile().close();
     }
 
     @Override
