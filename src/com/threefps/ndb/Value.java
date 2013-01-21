@@ -30,13 +30,67 @@ public interface Value {
      */
     public byte[] raw();
     
+    /**
+     * Get the value as a certain type
+     *
+     * @return The data in that type
+     * @throws DataException If the current value is not of that type
+     */
     public byte asByte() throws DataException;
+    /**
+     * Get the value as a certain type
+     *
+     * @return The data in that type
+     * @throws DataException If the current value is not of that type
+     */
     public short asShort() throws DataException;
+    /**
+     * Get the value as a certain type
+     *
+     * @return The data in that type
+     * @throws DataException If the current value is not of that type
+     */
     public int asInt() throws DataException;
+    /**
+     * Get the value as a certain type
+     *
+     * @return The data in that type
+     * @throws DataException If the current value is not of that type
+     */
     public long asLong() throws DataException;
+    /**
+     * Get the value as a certain type
+     *
+     * @return The data in that type
+     * @throws DataException If the current value is not of that type
+     */
     public float asFloat() throws DataException;
+    /**
+     * Get the value as a certain type
+     *
+     * @return The data in that type
+     * @throws DataException If the current value is not of that type
+     */
     public double asDouble() throws DataException;
+    /**
+     * Get the value as a certain type
+     *
+     * @return The data in that type
+     * @throws DataException If the current value is not of that type
+     */
     public boolean asBool() throws DataException;    
+    /**
+     * Get the value as a certain type
+     *
+     * @return The data in that type
+     * @throws DataException If the current value is not of that type
+     */
     public String asString() throws DataException;
+    /**
+     * Get the value as a certain type
+     *
+     * @return The data in that type
+     * @throws DataException If the current value is not of that type
+     */
     public byte[] asBin() throws DataException;
 }

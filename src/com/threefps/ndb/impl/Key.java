@@ -304,9 +304,9 @@ public class Key extends Node {
     /**
      * Get the previous n values for this key
      *
-     * @param f
-     * @param n
-     * @return
+     * @param f The data file
+     * @param n number of values
+     * @return An array with the available values
      * @throws DataException
      * @throws IOException
      */
