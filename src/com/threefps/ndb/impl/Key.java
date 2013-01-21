@@ -21,7 +21,7 @@ public class Key extends Node {
     private long nextPos = 0;
     private long valuePos = 0;
     private String name = null;
-    private Value value = null;
+    private ValueImpl value = null;
 
     /**
      * Create a new record and write to file
@@ -80,6 +80,11 @@ public class Key extends Node {
     }
 
     // <editor-fold desc="Getters and Setters">
+    
+    private void setValue(ValueImpl v) {
+        this.value = v;
+    }
+    
     public long getRecordPos() {
         return recordPos;
     }
@@ -178,10 +183,11 @@ public class Key extends Node {
      * @throws IOException
      */
     public void writeValue(DataFile f, DataType type, byte[] val) throws IOException, DataException {
-        Value v = Value.create(f, getRecordPos(), getValuePos(), type, val);
+        ValueImpl v = ValueImpl.create(f, getRecordPos(), getValuePos(), type, val);
         retireValue(f);
         setValuePos(v.getPos());
         writeValuePos(f);
+        setValue(v);
     }
     // </editor-fold>
 
@@ -202,9 +208,9 @@ public class Key extends Node {
      * @throws DataException
      * @throws IOException
      */
-    public Value getValue(DataFile f) throws DataException, IOException {
+    public ValueImpl getValue(DataFile f) throws DataException, IOException {
         if (value == null && getPos() != 0) {
-            value = Value.read(f, getValuePos());
+            value = ValueImpl.read(f, getValuePos());
         }
         return value;
     }

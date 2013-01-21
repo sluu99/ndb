@@ -274,26 +274,6 @@ public class RecordImpl extends Node implements Record {
         else return RecordImpl.read(getTable(), getPrevRecordPos());
     }
 
-    /**
-     * Get value of a key
-     *
-     * @param k
-     * @return
-     * @throws IOException
-     * @throws DataException
-     */
-    private Value getValue(String k) throws IOException, DataException {
-        Key key = getKey(k, false);
-        if (key == null) {
-            throw new DataException(String.format("Cannot find key '%s'", k));
-        }
-        Value v = key.getValue(getFile());
-        if (v == null) {
-            throw new DataException(String.format("Cannot get value for key '%s'", k));
-        }
-        return v;
-    }
-
     // <editor-fold desc="Value setters">
     @Override
     public void setByte(String key, byte value) throws IOException, DataException {
@@ -349,18 +329,24 @@ public class RecordImpl extends Node implements Record {
     // <editor-fold desc="Value getters">
     
     /**
-     * Check data type and get the raw data
-     * @param key
-     * @param type
+     * Get value of a key
+     *
+     * @param k
      * @return
      * @throws IOException
-     * @throws DataException 
+     * @throws DataException
      */
-    private byte[] getRawDataTyped(String key, DataType type) throws IOException, DataException  {
-        Value v = getValue(key);
-        if (v.getType() != type)
-            throw new DataException("'" + key + "' is of type " + v.getType() + ", not " + type);
-        return v.getRaw();
+    @Override
+    public ValueImpl getValue(String k) throws IOException, DataException {
+        Key key = getKey(k, false);
+        if (key == null) {
+            throw new DataException(String.format("Cannot find key '%s'", k));
+        }
+        ValueImpl v = key.getValue(getFile());
+        if (v == null) {
+            throw new DataException(String.format("Cannot get value for key '%s'", k));
+        }
+        return v;
     }
     
     @Override
@@ -375,57 +361,52 @@ public class RecordImpl extends Node implements Record {
     
     @Override
     public byte[] getRaw(String key) throws IOException, DataException {
-        return getValue(key).getRaw();
+        return getValue(key).raw();
     }
     
     @Override
     public byte getByte(String key) throws IOException, DataException {
-        return getRawDataTyped(key, DataType.BYTE)[0];
+        return getValue(key).asByte();
     }
     
     @Override
     public short getShort(String key) throws IOException, DataException {
-        return B.toShort(getRawDataTyped(key, DataType.SHORT), 0);
+        return getValue(key).asShort();
     }
     
     @Override
     public int getInt(String key) throws IOException, DataException {
-        return B.toInt(getRawDataTyped(key, DataType.INT), 0);
+        return getValue(key).asInt();
     }
     
     @Override
     public long getLong(String key) throws IOException, DataException {
-        return B.toLong(getRawDataTyped(key, DataType.LONG), 0);
+        return getValue(key).asLong();
     }
     
     @Override
     public float getFloat(String key) throws IOException, DataException {
-        return B.toFloat(getRawDataTyped(key, DataType.FLOAT), 0);
+        return getValue(key).asFloat();
     }
     
     @Override
     public double getDouble(String key) throws IOException, DataException {
-        return B.toDouble(getRawDataTyped(key, DataType.DOUBLE), 0);
+        return getValue(key).asDouble();
     }
     
     @Override
     public boolean getBool(String key) throws IOException, DataException {
-        return B.toBool(getRawDataTyped(key, DataType.BOOL), 0);
+        return getValue(key).asBool();
     }
     
     @Override
     public String getString(String key) throws IOException, DataException {
-        return new String(getRawDataTyped(key, DataType.STRING));
-    }
-    
-    @Override
-    public String getBigString(String key) throws IOException, DataException {
-        return new String(getRawDataTyped(key, DataType.BIG_STRING));
+        return getValue(key).asString();
     }
     
     @Override
     public byte[] getBin(String key) throws IOException, DataException {
-        return getRawDataTyped(key, DataType.BIG_STRING);
+        return getValue(key).asBin();
     }
     // </editor-fold>    
 }
